@@ -1,73 +1,47 @@
-# React + TypeScript + Vite
+# The Cat Platformer
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+---
 
-Currently, two official plugins are available:
+## Overview
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+**The Cat Platformer** is a 2D platformer game originally created as a personal gift for an online friend who loves cats, memes, and video games. What started as a small passion project quickly grew into something I am genuinely proud of and decided to include in my portfolio.
 
-## React Compiler
+The game was developed in **five days**, and while it does not follow perfect architectural practices, it demonstrates creativity, rapid problem-solving, and the ability to turn an idea into a fully playable experience within a short timeframe.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## Project Background
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+This project was initially never intended for public release. Development was done rapidly, resulting in a monolithic structure where most of the game mechanics were implemented in a single file. At the time, the goal was to build a short mini-game rather than a full project.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+As development progressed, the project evolved into a complete experience featuring a short story, a boss fight, and a clear objective. The game draws inspiration from **Terraria**, **Mario**, and various cat memes commonly seen across social media platforms.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+Although the game still contains known bugs and areas for improvement, it stands as a completed project that reflects growth, experimentation, and commitment to finishing what was started.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+---
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Gameplay Summary
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+You play as a cat on a mission to rescue another trapped cat, guarded by a boss enemy. The gameplay combines classic platformer mechanics with lighthearted humor and meme-inspired elements.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+---
+
+## Development Notes
+
+- Development Time: **5 days**
+- Code Structure: **Monolithic (single-file core mechanics)**
+- Current Status: **Playable with known bugs**
+- Planned Improvements:
+  - Refactoring game logic into modular components
+  - Bug fixes and performance optimizations
+  - Gameplay balancing and visual polish
+
+---
+
+## Technologies Used
+
+- React
+- TypeScript
+- Vite
+
+---
