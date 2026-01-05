@@ -12,7 +12,7 @@ const Home: React.FC = () => {
   const handleStart = () => {
     // navigate to /home so the URL shows the started view
     if (!started) {
-      window.location.href = "/home";
+      window.location.href = "/games";
     }
   };
 
