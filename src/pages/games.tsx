@@ -4476,11 +4476,11 @@ export default function CatPlatformer() {
         aria-label="Back"
         tabIndex={0}
         draggable={false}
-        onClick={() => (window.location.href = "/home")}
+        onClick={() => (window.location.href = "/")}
         onKeyDown={(e: any) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
-            window.location.href = "/home";
+            window.location.href = "/";
           }
         }}
         style={{
