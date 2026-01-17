@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 
 const Home: React.FC = () => {
   const bgUrl = "/others/bg.gif";
-  const [started] = useState(() => window.location.pathname === "/home");
+  const [started] = useState(() => window.location.pathname === "/games");
   const [pressed, setPressed] = useState(false);
 
   useEffect(() => {
@@ -12,7 +12,7 @@ const Home: React.FC = () => {
   const handleStart = () => {
     // navigate to /home so the URL shows the started view
     if (!started) {
-      window.location.href = "/home";
+      window.location.href = "/games";
     }
   };
 
