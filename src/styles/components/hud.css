@@ -1,0 +1,50 @@
+/* Ammo counter, pinned inside the framed play area. */
+.ammo-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: var(--z-hud);
+  padding: 6px 8px;
+  border: 1px solid var(--color-hairline-light);
+  border-radius: var(--radius-sm);
+  background: var(--color-panel-solid);
+  color: var(--color-text-light);
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  user-select: none;
+}
+
+/*
+ * Contextual prompts ("press R to reload"). Stacked by slot rather than by
+ * source, so two prompts never land on top of each other.
+ */
+.hint-banner {
+  position: absolute;
+  left: 50%;
+  z-index: var(--z-hint);
+  padding: 6px 10px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  background: var(--color-paper);
+  color: #000;
+  font-family: var(--font-pixel);
+  font-size: 13px;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+/* Sits above the mountains but below the clouds. */
+.hint-banner--aim {
+  top: 88px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.hint-banner--action {
+  top: 128px;
+}
+
+.hint-banner--prompt {
+  top: 160px;
+}

@@ -1,0 +1,96 @@
+/*
+ * DOM sprites layered over the game canvas.
+ *
+ * Position, size and flip are written by the render loop; everything static
+ * lives here. Anchored bottom-centre so a sprite grows upward from its feet.
+ */
+.game-sprite {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  image-rendering: pixelated;
+  transform-origin: bottom center;
+}
+
+.game-sprite--enemy {
+  z-index: var(--z-sprite);
+}
+
+/* Above bridges, so the boss is never hidden behind the planks. */
+.game-sprite--boss {
+  z-index: var(--z-sprite-raised);
+}
+
+.game-sprite--reward {
+  z-index: var(--z-sprite);
+}
+
+/* Slides from the hostage to the player during the handover. */
+.game-sprite--cutter {
+  z-index: 12000;
+  width: 36px;
+  height: auto;
+  transition:
+    left 650ms ease,
+    top 650ms ease,
+    transform 650ms ease;
+}
+
+/* Sits above everything while the death animation plays out. */
+.game-sprite--death {
+  z-index: var(--z-chrome);
+  width: 70px;
+  height: auto;
+  transform-origin: center bottom;
+}
+
+/* The player's animated GIF. */
+.player-sprite {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: none;
+  pointer-events: none;
+  image-rendering: pixelated;
+  transform-origin: center;
+}
+
+/* Held weapon, positioned relative to the player each frame. */
+.player-weapon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: var(--z-sprite);
+  display: none;
+  pointer-events: none;
+  image-rendering: pixelated;
+  transform-origin: center;
+}
+
+/* Holds a frozen GIF frame so the player appears to stand still. */
+.player-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  display: none;
+  pointer-events: none;
+  image-rendering: pixelated;
+}
+
+/* Floating hint above a pickup. */
+.game-bubble {
+  position: absolute;
+  z-index: var(--z-bubble);
+  display: none;
+  padding: 6px 8px;
+  border: 2px solid #222;
+  border-radius: var(--radius-lg);
+  background: var(--color-paper);
+  color: #000;
+  font: 12px var(--font-pixel);
+  white-space: nowrap;
+  pointer-events: none;
+  animation: bubble-bob 900ms ease-in-out infinite;
+}

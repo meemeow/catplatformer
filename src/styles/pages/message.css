@@ -1,0 +1,7 @@
+/* The Christmas message page: a single large book illustration. */
+.message-page__book {
+  display: block;
+  width: 60%;
+  max-width: 580px;
+  height: auto;
+}

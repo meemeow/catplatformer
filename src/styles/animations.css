@@ -1,0 +1,25 @@
+/* Shared keyframes. Anything that moves on its own is defined here. */
+
+/* Speech bubbles hover above their pickup. */
+@keyframes bubble-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+/* The start button depresses on click. */
+@keyframes press-nudge {
+  to {
+    transform: translate(6px, 6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-bubble {
+    animation: none;
+  }
+}

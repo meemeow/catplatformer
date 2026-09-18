@@ -1,0 +1,107 @@
+/* The game screen: a centred, framed canvas on the cave background. */
+.game-page {
+  box-sizing: border-box;
+  padding: 16px;
+}
+
+.game-page__layout {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+}
+
+.game-page__frame-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+/*
+ * The frame reserves its thickness with padding rather than a border, so the
+ * art can be painted by `::after` on top of the play area. A `border-image` on
+ * this element would paint beneath its own children, putting the foliage
+ * behind the game.
+ *
+ * The padding is the art thickness minus an overlap, so the play area reaches
+ * back underneath the frame. Without that overlap the innermost pixels of each
+ * band — which are transparent, past the end of the leaves — show as a seam
+ * between the frame and the game.
+ *
+ * Raise `--frame-overlap` to tuck the game further under the foliage; lower it
+ * if the leaves start covering too much of the play area.
+ */
+.game-page__frame {
+  /*
+   * The art band. These are the slice values (45 46 54 55) scaled by 1.35 —
+   * the same ratio for all four, so the corners are not distorted.
+   *
+   * The slices are deliberately wider than the wooden bar: the leaves reach
+   * further inward than the bar does, and `border-image` discards everything
+   * inside the slice lines. Measured against the source image, the region
+   * these slices cut away contains no opaque pixels at all, so no foliage is
+   * clipped. Narrowing them shears the leaves off on a straight line.
+   */
+  --art-top: 61px;
+  --art-right: 62px;
+  --art-bottom: 73px;
+  --art-left: 74px;
+
+  /*
+   * Where the play area starts: the inner edge of the wooden bar. The leaves
+   * beyond it overhang the game, exactly as they overhang the hole in the
+   * source image.
+   *
+   * The bottom bar is the raggedest of the four — its inner edge wanders by
+   * roughly 15px across the width — so it is tucked in further than the
+   * others to close the seam at its thinnest points.
+   */
+  --inset-top: 39px;
+  --inset-right: 39px;
+  --inset-bottom: 38px;
+  --inset-left: 47px;
+
+  /* A little extra tuck, so a ragged bar edge never leaves a seam. */
+  --frame-overlap: 8px;
+
+  position: relative;
+  z-index: var(--z-chrome);
+  padding:
+    calc(var(--inset-top) - var(--frame-overlap))
+    calc(var(--inset-right) - var(--frame-overlap))
+    calc(var(--inset-bottom) - var(--frame-overlap))
+    calc(var(--inset-left) - var(--frame-overlap));
+}
+
+/* Clips sprites to the play area. Kept off the frame so it cannot clip the art. */
+.game-page__viewport {
+  position: relative;
+  overflow: hidden;
+  line-height: 0;
+}
+
+/*
+ * The frame art itself, sitting above the canvas and the sprite layer.
+ *
+ * `inset: 0` pins it to the parent's padding box, so the band starts at the
+ * frame's outer edge and reaches `--art-*` inward. That is further than the
+ * padding, which is what lets the overhanging leaves fall across the game
+ * rather than being cut off at the edge of the play area.
+ */
+.game-page__frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  border-style: solid;
+  border-color: transparent;
+  border-width: var(--art-top) var(--art-right) var(--art-bottom)
+    var(--art-left);
+  /* Repeated rather than stretched, so the foliage keeps its proportions. */
+  border-image: url("/images/Cattachasm_border.png") 45 46 54 55 round;
+  pointer-events: none;
+}
+
+.game-page__canvas {
+  display: block;
+  image-rendering: pixelated;
+}

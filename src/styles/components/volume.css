@@ -1,0 +1,79 @@
+/*
+ * Vertical master-volume control, fixed to the right edge of the game screen.
+ *
+ * The readout sits on top and the speaker below, so louder is literally higher.
+ */
+.volume {
+  position: fixed;
+  top: 50%;
+  right: 16px;
+  z-index: var(--z-chrome);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 10px;
+  border: 2px solid rgba(0, 0, 0, 0.35);
+  border-radius: var(--radius-lg);
+  background: var(--color-panel-solid);
+  transform: translateY(-50%);
+  user-select: none;
+}
+
+.volume__readout {
+  min-width: 3ch;
+  color: var(--color-text-light);
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * A native range input turned on its side.
+ *
+ * `writing-mode: vertical-lr` is the supported way to orient a range control;
+ * `direction: rtl` then puts the maximum at the top, so dragging up is louder.
+ *
+ * The track and thumb are deliberately left native and tinted with
+ * `accent-color`: the vendor pseudo-elements that would style them
+ * (`::-webkit-slider-thumb`, `::-moz-range-thumb`) disagree about which axis is
+ * which once the control is rotated, and get it wrong in different ways per
+ * engine. Native parts stay correct everywhere.
+ */
+.volume__slider {
+  width: 24px;
+  height: 160px;
+  margin: 0;
+  writing-mode: vertical-lr;
+  direction: rtl;
+  accent-color: #ffd966;
+  cursor: pointer;
+}
+
+.volume__slider:focus-visible {
+  outline: 2px solid #ffd966;
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+.volume__mute {
+  padding: 2px 4px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.volume__mute:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* On short screens the control would overlap the frame, so shrink it. */
+@media (max-height: 620px) {
+  .volume__slider {
+    height: 96px;
+  }
+}

@@ -1,0 +1,62 @@
+/* Design tokens. Every colour, depth and size the UI uses is named here. */
+:root {
+  --font-pixel: monospace;
+
+  --color-ink: #222;
+  --color-paper: rgba(255, 255, 255, 0.95);
+  --color-panel: rgba(10, 10, 10, 0.92);
+  --color-panel-solid: rgba(20, 20, 20, 0.9);
+  --color-text-light: #fff;
+  --color-scrim: rgba(0, 0, 0, 0.4);
+  --color-hairline: rgba(0, 0, 0, 0.12);
+  --color-hairline-light: rgba(255, 255, 255, 0.06);
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  --shadow-panel: 0 8px 24px rgba(0, 0, 0, 0.6);
+
+  /* Stacking order, so no component has to invent a z-index. */
+  --z-sprite: 2;
+  --z-sprite-raised: 3;
+  --z-bubble: 9998;
+  --z-chrome: 9999;
+  --z-hud: 10001;
+  --z-hint: 10000;
+  --z-overlay: 10000;
+  --z-dialogue: 10002;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Nearest-neighbour scaling; the whole game is pixel art. */
+.pixel {
+  image-rendering: pixelated;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* A full-viewport screen with the animated cave background. */
+.screen {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  background-image: url("/others/bg.gif");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.screen--column {
+  flex-direction: column;
+}

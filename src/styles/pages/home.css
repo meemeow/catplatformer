@@ -1,0 +1,61 @@
+/* Title screen and the two-tile main menu. */
+
+.start-button {
+  display: inline-block;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: transform 60ms linear;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.start-button:active {
+  transform: translate(6px, 6px);
+}
+
+.start-button__image {
+  display: block;
+  width: 320px;
+  height: auto;
+  pointer-events: none;
+}
+
+.main-menu {
+  display: flex;
+  margin-top: 32px;
+  align-items: flex-start;
+  gap: 48px;
+}
+
+.menu-tile {
+  text-decoration: none;
+}
+
+.menu-tile__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.menu-tile__art {
+  display: block;
+  height: auto;
+}
+
+/* The book art is small, so it is padded up to match the game tile's mass. */
+.menu-tile__art--book {
+  width: 140px;
+  padding: 70px 40px 0;
+}
+
+.menu-tile__art--game {
+  width: 200px;
+}
+
+.menu-tile__label {
+  display: block;
+  width: 300px;
+  height: auto;
+}

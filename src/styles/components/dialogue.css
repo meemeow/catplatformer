@@ -1,0 +1,143 @@
+/* Cutscene dialogue panel, anchored to the bottom of the play area. */
+.dialogue-box {
+  position: absolute;
+  right: 0;
+  bottom: 12px;
+  left: 0;
+  z-index: var(--z-dialogue);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+/*
+ * A carved wooden sign, built entirely from gradients so it needs no art.
+ *
+ * `repeating-linear-gradient` lays down the plank grain, the overlaid
+ * top-to-bottom gradient darkens the ends so the boards look recessed, and the
+ * outer border reads as the lighter frame around them.
+ */
+.dialogue-box__panel {
+  --wood-light: #a9784a;
+  --wood-mid: #7c5230;
+  --wood-dark: #593820;
+  --wood-edge: #3a2214;
+  --brass: #e0b455;
+  --brass-dark: #8a6420;
+
+  position: relative;
+  display: flex;
+  width: 92%;
+  max-width: 980px;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  border: 6px solid var(--wood-light);
+  border-radius: 10px;
+  background-color: var(--wood-mid);
+  background-image:
+    linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.3) 0%,
+      rgba(0, 0, 0, 0) 16%,
+      rgba(0, 0, 0, 0) 84%,
+      rgba(0, 0, 0, 0.3) 100%
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      var(--wood-mid) 0 13px,
+      var(--wood-dark) 13px 14px,
+      var(--wood-mid) 14px 15px
+    );
+  box-shadow:
+    inset 0 0 0 2px var(--wood-edge),
+    var(--shadow-panel);
+  color: #f6e7cf;
+  cursor: pointer;
+  user-select: none;
+}
+
+/*
+ * Brass corner brackets.
+ *
+ * Two pseudo-elements carry all four: each draws an L in two corners using
+ * `border-*-color`, so no extra markup is needed.
+ */
+.dialogue-box__panel::before,
+.dialogue-box__panel::after {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border: 4px solid transparent;
+  pointer-events: none;
+}
+
+.dialogue-box__panel::before {
+  top: -2px;
+  left: -2px;
+  border-top-color: var(--brass);
+  border-left-color: var(--brass);
+  border-top-left-radius: 8px;
+  box-shadow: inset 1px 1px 0 var(--brass-dark);
+}
+
+.dialogue-box__panel::after {
+  right: -2px;
+  bottom: -2px;
+  border-right-color: var(--brass);
+  border-bottom-color: var(--brass);
+  border-bottom-right-radius: 8px;
+  box-shadow: inset -1px -1px 0 var(--brass-dark);
+}
+
+/* The portrait sits in its own recessed frame, like an inset panel. */
+.dialogue-box__portrait {
+  display: flex;
+  flex: 0 0 132px;
+  width: 132px;
+  height: 132px;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid var(--wood-edge);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.28);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.55);
+}
+
+.dialogue-box__portrait img {
+  width: 122px;
+  height: 122px;
+  border-radius: 5px;
+  object-fit: cover;
+  image-rendering: pixelated;
+}
+
+.dialogue-box__body {
+  flex: 1;
+}
+
+.dialogue-box__speaker {
+  margin-bottom: 8px;
+  color: var(--brass);
+  font-family: var(--font-pixel);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-shadow: 1px 1px 0 var(--wood-edge);
+}
+
+/* Reserved height keeps the panel from resizing as the text types in. */
+.dialogue-box__text {
+  min-height: 58px;
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  line-height: 1.3;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.45);
+}
+
+.dialogue-box__hint {
+  margin-top: 8px;
+  font-size: 12px;
+  opacity: 0.75;
+}
