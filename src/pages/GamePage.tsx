@@ -6,6 +6,7 @@ import {
   AmmoBadge,
   BossHealthBar,
   CompletionBanner,
+  CutProgress,
   EndScreen,
   HintBanner,
   StatsPanel,
@@ -153,6 +154,14 @@ const GamePage = () => {
 
               {hudVisible && game.hasWeapon && game.weaponType && (
                 <AmmoBadge ammo={game.ammo} />
+              )}
+
+              {game.cutProgress && (
+                <CutProgress
+                  x={game.cutProgress.x}
+                  y={game.cutProgress.y}
+                  progress={game.cutProgress.progress}
+                />
               )}
 
               {hudVisible &&

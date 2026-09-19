@@ -364,3 +364,85 @@
     padding: 6px 10px;
   }
 }
+
+/*
+ * The cutting gauge, standing over the post it belongs to.
+ *
+ * Positioned in world space by the component, so the transform only has to
+ * centre it on its tile and lift it clear: `translate(-50%, -100%)` puts its
+ * foot on the top edge of the post rather than its corner on the tile's.
+ *
+ * Same timber and brass as the rest of the interface, in miniature — it is on
+ * screen for eight seconds at a time and should not read as browser chrome
+ * dropped over the world.
+ */
+.cut-gauge {
+  position: absolute;
+  z-index: var(--z-hud);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 8px 6px;
+  border: 3px solid var(--wood-light);
+  border-radius: 6px;
+  background-color: var(--wood-mid);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--wood-mid) 0 11px,
+    var(--wood-dark) 11px 12px,
+    var(--wood-mid) 12px 13px
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 0 0 2px var(--wood-edge),
+    inset 0 0 12px rgba(0, 0, 0, 0.5),
+    0 0 0 2px var(--wood-edge),
+    0 6px 16px rgba(0, 0, 0, 0.6);
+  color: var(--wood-text);
+  font-family: var(--font-pixel);
+  line-height: 1.2;
+  transform: translate(-50%, -100%) translateY(-8px);
+  user-select: none;
+  pointer-events: none;
+}
+
+.cut-gauge__label {
+  color: var(--brass);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-shadow: 1px 1px 0 var(--wood-edge);
+}
+
+/* A channel routed into the timber, as on the boss bar and the volume post. */
+.cut-gauge__track {
+  overflow: hidden;
+  width: 62px;
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.62),
+    rgba(0, 0, 0, 0.3) 55%,
+    rgba(0, 0, 0, 0.55)
+  );
+  box-shadow:
+    inset 0 0 0 1px var(--wood-edge),
+    inset 0 2px 5px rgba(0, 0, 0, 0.65);
+}
+
+/*
+ * Brass rather than the boss bar's red: this is work being done, not damage.
+ *
+ * The transition covers the gap between ticks — progress is reported every
+ * 150ms, which would otherwise step visibly across an eight-second hold.
+ */
+.cut-gauge__fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(to bottom, #f0d089, var(--brass) 55%, #8a6a24);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 0 8px rgba(201, 163, 77, 0.45);
+  transition: width 160ms linear;
+}

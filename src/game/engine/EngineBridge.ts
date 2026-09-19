@@ -29,6 +29,10 @@ export interface EngineBridge {
   setBossHealth: (health: number) => void;
   /** True once the boss cutscene ends and its health bar should be shown. */
   setBossEngaged: (engaged: boolean) => void;
+  /** The rope being cut and how far through it is, or null when not cutting. */
+  setCutProgress: (
+    cut: { x: number; y: number; progress: number } | null,
+  ) => void;
   setHealth: (health: number) => void;
   setCutsceneActive: (active: boolean) => void;
   setShowHud: (show: boolean) => void;

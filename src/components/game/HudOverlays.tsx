@@ -1,3 +1,4 @@
+import { SCALE, TILE } from "../../game/constants";
 import type { Ammo } from "../../game/types";
 
 interface AmmoBadgeProps {
@@ -140,6 +141,43 @@ export const BossHealthBar = ({ health, max }: BossHealthBarProps) => {
       </div>
 
       <output className="boss-bar__readout">{percent}%</output>
+    </div>
+  );
+};
+
+interface CutProgressProps {
+  /** Tile the rope is on, so the gauge can stand over it. */
+  x: number;
+  y: number;
+  /** How far through the rope the cutter is, 0..1. */
+  progress: number;
+}
+
+/**
+ * The cutting gauge, planted above the post being cut.
+ *
+ * Over the world rather than in a corner of the screen: the cut is an
+ * eight-second hold and the player is watching the rope and the boss, not the
+ * edge of the frame. Its position comes from the tile, so it follows the post
+ * on any level instead of being a fixed offset.
+ */
+export const CutProgress = ({ x, y, progress }: CutProgressProps) => {
+  const done = Math.max(0, Math.min(1, progress));
+
+  return (
+    <div
+      className="cut-gauge"
+      style={{ left: (x * TILE + TILE / 2) * SCALE, top: y * TILE * SCALE }}
+      role="progressbar"
+      aria-label="Cutting the rope"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={Math.round(done * 100)}
+    >
+      <span className="cut-gauge__label">Cutting</span>
+      <div className="cut-gauge__track">
+        <div className="cut-gauge__fill" style={{ width: `${done * 100}%` }} />
+      </div>
     </div>
   );
 };

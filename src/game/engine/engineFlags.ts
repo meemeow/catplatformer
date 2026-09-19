@@ -40,6 +40,14 @@ export interface EngineFlags {
   shownCutscenes: Record<number, boolean>;
   /** The player has accepted the bridge cutter from the hostage. */
   cutterGiven: boolean;
+  /**
+   * The rope has been cut, so the cat stands and watches the rest play out.
+   *
+   * The fall, the defeat dialogue and the celebration are one unbroken beat;
+   * being able to wander off part way through reads as a bug, and walking into
+   * the gap where the bridge used to be would end the level the wrong way.
+   */
+  movementLocked: boolean;
   /** Both hostage prompts have been seen, so the reward can be used. */
   rewardUnlocked: boolean;
   seenHostageOutOfBullets: boolean;
@@ -102,6 +110,7 @@ export const createEngineFlags = (): EngineFlags => ({
   bossCanMove: false,
   shownCutscenes: {},
   cutterGiven: false,
+  movementLocked: false,
   rewardUnlocked: false,
   seenHostageOutOfBullets: false,
   seenHostageBossMoving: false,
@@ -137,6 +146,7 @@ export const resetLevelFlags = (flags: EngineFlags): void => {
   flags.bossCanMove = false;
   flags.bossCutsceneDone = false;
   flags.cutterGiven = false;
+  flags.movementLocked = false;
   flags.rewardUnlocked = false;
   flags.seenHostageOutOfBullets = false;
   flags.seenHostageBossMoving = false;

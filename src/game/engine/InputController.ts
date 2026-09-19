@@ -59,8 +59,11 @@ export class InputController {
   private onActionKey(down: boolean): void {
     const { flags, input } = this.session;
 
+    // Once the cutter is in hand the offer is over, and F goes back to being
+    // the fire key rather than replaying the handover.
     const canAcceptCutter =
       down &&
+      !flags.cutterGiven &&
       flags.nearHostage &&
       (flags.seenHostageOutOfBullets || flags.seenHostageBossMoving);
 

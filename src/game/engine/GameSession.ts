@@ -220,9 +220,17 @@ export class GameSession {
     this.input.attack = false;
   }
 
-  /** True while the player has no control: cutscene, dialogue or intro. */
+  /**
+   * True while the player has no control: cutscene, dialogue, intro, or the
+   * scripted ending that starts the moment the bridge is cut.
+   */
   get inputsBlocked(): boolean {
-    return this.flags.cutsceneActive || this.flags.dialogVisible || this.flags.introActive;
+    return (
+      this.flags.cutsceneActive ||
+      this.flags.dialogVisible ||
+      this.flags.introActive ||
+      this.flags.movementLocked
+    );
   }
 
   // ------------------------------------------------------------ level flow
@@ -383,14 +391,14 @@ export class GameSession {
       this.stepFootsteps();
 
       this.stepPickups();
-      this.blockInputDuringDialogue();
+      this.holdPlayerStill();
       this.stepShooting();
       this.stepEnemies(dt);
       this.boss.step(dt);
       this.stepEnemyProximityAudio();
       this.stepPlayerEnemyContact();
     } else {
-      this.blockInputDuringDialogue();
+      this.holdPlayerStill();
     }
 
     if (simulating || this.flags.introActive) {
@@ -448,9 +456,16 @@ export class GameSession {
     }
   }
 
-  /** Stops the player drifting while a dialogue box is open. */
-  private blockInputDuringDialogue(): void {
-    if (!this.flags.dialogVisible && !this.flags.introActive) return;
+  /**
+   * Stops the player drifting while a dialogue box is open, during the intro,
+   * or once the ending has been set in motion.
+   *
+   * Gravity still runs, so a cat caught in mid-air lands rather than hanging
+   * there; it just does not get to choose where.
+   */
+  private holdPlayerStill(): void {
+    const { dialogVisible, introActive, movementLocked } = this.flags;
+    if (!dialogVisible && !introActive && !movementLocked) return;
     this.clearInput();
     this.world.player.vx = 0;
   }
@@ -643,12 +658,20 @@ export class GameSession {
     }
   }
 
+  /**
+   * Shows or hides the prompt to take the cutter.
+   *
+   * The same conditions gate the F key in `InputController`, including
+   * `cutterGiven`: the offer is a one-time thing, so once the cutter has been
+   * handed over the prompt has nothing left to offer and goes away.
+   */
   private stepHostagePrompt(): void {
     const near = isNearHostage(this.world);
     this.flags.nearHostage = near;
     this.bridge.setShowHostagePrompt(
       near &&
         this.flags.showHud &&
+        !this.flags.cutterGiven &&
         (this.flags.seenHostageOutOfBullets || this.flags.seenHostageBossMoving),
     );
   }

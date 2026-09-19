@@ -1,4 +1,13 @@
 /* Cutscene dialogue panel, anchored to the bottom of the play area. */
+/*
+ * The click target, which stretches the full width of the play area.
+ *
+ * It carries no art of its own, so anything the browser paints on it shows up
+ * as a bare rectangle across the screen: a focus ring when it is clicked, or a
+ * selection highlight when it is clicked repeatedly. Both are suppressed here
+ * and the keyboard ring is moved onto the panel instead, where it looks like
+ * part of the sign rather than a stray box.
+ */
 .dialogue-box {
   position: absolute;
   right: 0;
@@ -8,6 +17,15 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
+  outline: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Keyboard focus still has to be visible; it just belongs on the timber. */
+.dialogue-box:focus-visible .dialogue-box__panel {
+  outline: 3px solid var(--brass);
+  outline-offset: 4px;
 }
 
 /*

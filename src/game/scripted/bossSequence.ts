@@ -26,13 +26,32 @@ export class BossSequence {
   private readonly session: GameSession;
   private walkTimer: number | null = null;
   private cutTimer: number | null = null;
+  /** True between the cutscene opening and its last line being advanced. */
+  private cutsceneRunning = false;
+  /**
+   * True from the moment the handover starts until the cutter is in hand.
+   *
+   * `flags.cutterGiven` only turns true when the handover dialogue ends, and
+   * `cutsceneActive` is mirrored from React a frame later, so without this a
+   * second press of F would start the whole animation over the top of itself.
+   */
+  private handoverRunning = false;
   private stopCelebration: (() => void) | null = null;
 
   constructor(session: GameSession) {
     this.session = session;
   }
 
-  /** Clears anything still running; safe to call on every level load. */
+  /**
+   * Clears anything still running; safe to call on every level load.
+   *
+   * A cutscene torn down before it finished counts as not having been shown.
+   * Without rolling that back, the session that replaces this one skips it and
+   * leaves `cutsceneActive` raised with nothing left to lower it, which locks
+   * the player out of their own controls. React's development double-mount
+   * does exactly that, so starting the game directly on the boss level used to
+   * open with no dialogue and no way to move.
+   */
   cancel(): void {
     if (this.walkTimer !== null) window.clearInterval(this.walkTimer);
     this.walkTimer = null;
@@ -40,6 +59,14 @@ export class BossSequence {
     this.cutTimer = null;
     this.stopCelebration?.();
     this.stopCelebration = null;
+    this.handoverRunning = false;
+    this.session.bridge.setCutProgress(null);
+
+    if (!this.cutsceneRunning) return;
+    const { flags, bridge } = this.session;
+    this.cutsceneRunning = false;
+    flags.shownCutscenes[flags.levelIndex] = false;
+    bridge.setCutsceneActive(false);
   }
 
   // ------------------------------------------------------------- cutscene
@@ -53,6 +80,7 @@ export class BossSequence {
     if (flags.introActive) return;
 
     flags.shownCutscenes[flags.levelIndex] = true;
+    this.cutsceneRunning = true;
     bridge.setPaused(false);
     bridge.setCutsceneActive(true);
     bridge.dialogue()?.setVisible(false);
@@ -87,6 +115,7 @@ export class BossSequence {
     this.walkTimer = null;
     audio.stop("dialogue");
 
+    this.cutsceneRunning = false;
     bridge.setCutsceneActive(false);
     bridge.setPaused(false);
 
@@ -108,12 +137,16 @@ export class BossSequence {
   acceptCutter(): void {
     const { world, flags, bridge, elements, timers } = this.session;
 
+    if (flags.cutterGiven || this.handoverRunning) return;
+    this.handoverRunning = true;
+
     bridge.setCutsceneActive(true);
     bridge.setPaused(true);
 
     const grant = () => {
       bridge.dialogue()?.startSequence(CUTTER_HANDOVER_LINES, () => {
         flags.cutterGiven = true;
+        this.handoverRunning = false;
         bridge.setCutsceneActive(false);
         bridge.setPaused(false);
       });
@@ -155,7 +188,7 @@ export class BossSequence {
    * tile immediately right of the post, and already have the cutter.
    */
   beginCut(tileX: number, tileY: number): boolean {
-    const { world, flags, timers } = this.session;
+    const { world, flags, timers, bridge } = this.session;
 
     const cut = world.cutTile;
     if (!cut || cut.cut || !flags.cutterGiven) return false;
@@ -166,10 +199,12 @@ export class BossSequence {
 
     cut.progress = 0;
     if (this.cutTimer !== null) timers.clearInterval(this.cutTimer);
+    bridge.setCutProgress({ x: cut.x, y: cut.y, progress: 0 });
 
     const start = Date.now();
     this.cutTimer = timers.setInterval(() => {
       cut.progress = Math.min(1, (Date.now() - start) / TIMINGS.cutDurationMs);
+      bridge.setCutProgress({ x: cut.x, y: cut.y, progress: cut.progress });
       if (cut.progress < 1) return;
 
       timers.clearInterval(this.cutTimer);
@@ -182,13 +217,14 @@ export class BossSequence {
 
   /** Releasing the button abandons the cut and resets its progress. */
   endCut(): void {
-    const { world, timers } = this.session;
+    const { world, timers, bridge } = this.session;
 
     if (this.cutTimer !== null) {
       timers.clearInterval(this.cutTimer);
       this.cutTimer = null;
     }
     if (world.cutTile && !world.cutTile.cut) world.cutTile.progress = 0;
+    bridge.setCutProgress(null);
   }
 
   /**
@@ -196,13 +232,24 @@ export class BossSequence {
    * standing on it at that moment, the level is lost.
    */
   private severBridge(): void {
-    const { world, audio } = this.session;
+    const { world, audio, flags } = this.session;
 
     const cut = world.cutTile;
     if (cut) {
       cut.cut = true;
       world.map.setTile(cut.x, cut.y, TILE_CHARS.empty);
     }
+    this.session.bridge.setCutProgress(null);
+
+    // Everything after this point is on rails: the fall, the defeat dialogue
+    // and the celebration play out as one beat, and the level is over either
+    // way. The cat holds the ledge and watches rather than wandering into the
+    // gap the bridge left behind. `resetLevelFlags` lifts it on the next load.
+    flags.movementLocked = true;
+    this.session.clearInput();
+    // The loop zeroes `vx` after it has already moved the player, so without
+    // this the cat coasts one last frame after the rope parts.
+    world.player.vx = 0;
 
     // Checked before the tiles are removed, or there is nothing left to stand on.
     const bossWasOnBridge = isBossOnBridge(world);

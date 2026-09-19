@@ -5,7 +5,16 @@ import type { GameWorld } from "../core/world";
 import { TILE_CHARS } from "../data/tiles";
 import type { Camera, CutTile } from "../types";
 import { paintRockTile, paintSoilTile, paintStoneBrickTile } from "./tileArt";
-import { abyssAt, DEPTH, LAVA, STONE, WOOD } from "./palette";
+import {
+  abyssAt,
+  DEPTH,
+  FLAG,
+  LAVA,
+  PLATE,
+  ROPE,
+  STONE,
+  WOOD,
+} from "./palette";
 import { tileVariant } from "./random";
 import { isReady, TEXTURES } from "./textures";
 
@@ -295,18 +304,22 @@ export interface TileDrawContext {
   cutTile: CutTile | null;
   /** The last level floods its pit, so lava is drawn full-height there. */
   fullHeightLava: boolean;
+  /** Frame timestamp, for tiles that move. */
+  now: number;
 }
 
 /** Builds a draw context from the live world. */
 export const tileDrawContext = (
   world: GameWorld,
   fullHeightLava: boolean,
+  now: number,
 ): TileDrawContext => ({
   camera: world.camera,
   map: world.map,
   activatedTraps: world.activatedTraps,
   cutTile: world.cutTile,
   fullHeightLava,
+  now,
 });
 
 /**
@@ -382,7 +395,7 @@ export class TileRenderer {
         drawTrap(ctx, screenX, screenY, tx, ty, context);
         break;
       case TILE_CHARS.finish:
-        drawFinishFlag(ctx, screenX, screenY);
+        drawFinishFlag(ctx, screenX, screenY, context.now);
         break;
       default:
         // Empty tiles stay transparent so the parallax background shows through.
@@ -531,7 +544,54 @@ export class TileRenderer {
   }
 }
 
-/** A trap-controlled wall, hidden entirely while its trap is held down. */
+/**
+ * The stones of one tile of wall, laid in a running bond.
+ *
+ * Two courses with the upper one offset by half a block, so the vertical
+ * joints of one course land on the middle of the blocks below. A grid of
+ * joints lining up is the thing that makes drawn masonry look like wallpaper.
+ */
+const WALL_STONES = [
+  { x: 1, y: 1, w: 14, h: 13 },
+  { x: 17, y: 1, w: 14, h: 13 },
+  { x: 1, y: 16, w: 6, h: 14 },
+  { x: 9, y: 16, w: 14, h: 14 },
+  { x: 25, y: 16, w: 6, h: 14 },
+] as const;
+
+/**
+ * One dressed stone: lit along the top and left, shadowed along the bottom and
+ * right, so it sits proud of the mortar instead of being a flat patch.
+ */
+const paintStone = (
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  tone: string,
+): void => {
+  ctx.fillStyle = tone;
+  ctx.fillRect(x, y, w, h);
+
+  ctx.fillStyle = STONE.bevel;
+  ctx.fillRect(x, y, w - 1, 1);
+  ctx.fillRect(x, y, 1, h - 1);
+
+  ctx.fillStyle = STONE.shade;
+  ctx.fillRect(x + 1, y + h - 1, w - 1, 1);
+  ctx.fillRect(x + w - 1, y + 1, 1, h - 1);
+};
+
+/**
+ * A trap-controlled wall, hidden entirely while its trap is held down.
+ *
+ * Cut masonry rather than one bevelled slab: a stretch of these tiles used to
+ * repeat the same block over and over with its joints in a perfect grid, which
+ * read as a texture rather than as a wall someone built. Each stone takes its
+ * tone and its weathering from where it sits on the map, so no two tiles of
+ * the same wall come out identical.
+ */
 const drawDeactivatedWall = (
   ctx: CanvasRenderingContext2D,
   screenX: number,
@@ -542,15 +602,38 @@ const drawDeactivatedWall = (
 ): void => {
   if (context.map.disabledWalls.has(tileKey(tx, ty))) return;
 
-  // Cut masonry, so it reads as built rather than grown.
   ctx.fillStyle = STONE.mortar;
   ctx.fillRect(screenX, screenY, TILE, TILE);
-  ctx.fillStyle = STONE.brick;
-  ctx.fillRect(screenX + 1, screenY + 1, TILE - 2, TILE - 2);
-  ctx.fillStyle = STONE.bevel;
-  ctx.fillRect(screenX + 1, screenY + 1, TILE - 2, 2);
-  ctx.fillStyle = STONE.shade;
-  ctx.fillRect(screenX + 1, screenY + TILE - 3, TILE - 2, 2);
+
+  WALL_STONES.forEach((stone, index) => {
+    const grain = tileVariant(tx * 7 + index, ty * 5 + index, 13, 29);
+    paintStone(
+      ctx,
+      screenX + stone.x,
+      screenY + stone.y,
+      stone.w,
+      stone.h,
+      grain === 0 ? STONE.brickAlt : STONE.brick,
+    );
+
+    // Moss gathers on the top edges, where the damp sits. Two short dabs at
+    // an offset taken from the stone's own position: a line across the whole
+    // block reads as a painted stripe rather than as something growing.
+    if (grain === 2) {
+      const from = stone.x + 2 + tileVariant(tx + index, ty, 11, 3);
+      ctx.fillStyle = STONE.mossDark;
+      ctx.fillRect(screenX + from, screenY + stone.y + 1, 3, 1);
+      ctx.fillStyle = STONE.moss;
+      ctx.fillRect(screenX + from, screenY + stone.y + 1, 2, 1);
+      ctx.fillRect(screenX + from + 5, screenY + stone.y + 1, 2, 1);
+    }
+
+    // A chipped corner, so the blocks do not all end on a clean right angle.
+    if (grain === 3) {
+      ctx.fillStyle = STONE.mortar;
+      ctx.fillRect(screenX + stone.x + stone.w - 2, screenY + stone.y, 2, 2);
+    }
+  });
 };
 
 /** Molten rock: dark below, bright at the surface, with a glowing crust. */
@@ -609,7 +692,31 @@ const drawLava = (
   paintLavaBody(ctx, screenX, screenY + TILE / 2, TILE / 2, true);
 };
 
-/** The rope anchor, plus a progress bar while the player is cutting it. */
+/** The rope is laid up from three strands, offset from its centre line. */
+const ROPE_STRANDS = [-2, 0, 2] as const;
+
+/** The post's geometry within its tile, and where the rope crosses it. */
+const POST = {
+  x: 12,
+  w: 8,
+  top: 4,
+  ropeY: 10,
+  /** How far past the post's face the cutter bites. */
+  bite: 4,
+} as const;
+
+/** How far a parted strand drops, and how far the rope reaches each way. */
+const CUT = { droop: 3, reach: TILE * 1.5, back: TILE * 0.5 } as const;
+
+/**
+ * The anchor post, and the rope being cut through.
+ *
+ * The cut used to show as a yellow bar floating under the tile. It is the rope
+ * itself that reports now: the bite deepens as the cutter works, fibres spring
+ * loose, and the three strands part one at a time. Over an eight-second hold
+ * that gives both something moving every frame and three clear milestones,
+ * where a bar gave a number and nothing to look at.
+ */
 const drawCutPost = (
   ctx: CanvasRenderingContext2D,
   screenX: number,
@@ -618,71 +725,158 @@ const drawCutPost = (
   ty: number,
   context: TileDrawContext,
 ): void => {
-  const postX = screenX + TILE * 0.38;
-  const postW = TILE * 0.24;
+  const { map, cutTile, now } = context;
+  const postX = screenX + POST.x;
+  const postTop = screenY + POST.top;
+  const ropeY = screenY + POST.ropeY;
+  const biteX = postX + POST.w + POST.bite;
+
+  const cutting =
+    cutTile && cutTile.x === tx && cutTile.y === ty && !cutTile.cut
+      ? cutTile.progress
+      : 0;
+
+  const toLeft = map.tileAt(tx - 1, ty) === TILE_CHARS.bridge;
+  const toRight = map.tileAt(tx + 1, ty) === TILE_CHARS.bridge;
+
+  // Rope first: the post stands in front of it.
+  ROPE_STRANDS.forEach((offset, strand) => {
+    const y = ropeY + offset;
+    ctx.fillStyle = strand === 1 ? ROPE.lit : ROPE.mid;
+
+    if (toLeft) {
+      const from = screenX - CUT.back;
+      ctx.fillRect(from, y, postX - from, 1);
+    }
+    if (!toRight) return;
+
+    // Strands part one at a time, so the load visibly moves to the rest.
+    const parted = cutting >= (strand + 1) / ROPE_STRANDS.length;
+    const from = postX + POST.w;
+    const to = screenX + CUT.reach;
+
+    if (!parted) {
+      ctx.fillRect(from, y, to - from, 1);
+      return;
+    }
+    ctx.fillRect(from, y, biteX - from, 1);
+    // Past the bite it has dropped onto whatever is still holding.
+    ctx.fillStyle = ROPE.dark;
+    ctx.fillRect(biteX + 2, y + CUT.droop, to - biteX - 2, 1);
+    ctx.fillRect(biteX, y + 1, 2, CUT.droop);
+  });
+
+  // The post: a squared timber, banded in iron and capped.
   ctx.fillStyle = WOOD.mid;
-  ctx.fillRect(postX, screenY + TILE * 0.12, postW, TILE * 0.76);
+  ctx.fillRect(postX, postTop, POST.w, TILE - POST.top);
   ctx.fillStyle = WOOD.light;
-  ctx.fillRect(postX, screenY + TILE * 0.12, 2, TILE * 0.76);
+  ctx.fillRect(postX, postTop, 2, TILE - POST.top);
   ctx.fillStyle = WOOD.dark;
-  ctx.fillRect(postX + postW - 2, screenY + TILE * 0.12, 2, TILE * 0.76);
+  ctx.fillRect(postX + POST.w - 2, postTop, 2, TILE - POST.top);
+  ctx.fillStyle = WOOD.grain;
+  ctx.fillRect(postX + 3, postTop + 6, 1, TILE - POST.top - 10);
 
-  // Ropes reach toward whichever neighbours are bridge tiles.
-  ctx.strokeStyle = WOOD.light;
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  if (context.map.tileAt(tx - 1, ty) === TILE_CHARS.bridge) {
-    ctx.moveTo(screenX + TILE * 0.35, screenY + TILE * 0.28);
-    ctx.lineTo(screenX - TILE * 0.5, screenY + TILE * 0.28);
+  ctx.fillStyle = WOOD.light;
+  ctx.fillRect(postX - 2, postTop - 3, POST.w + 4, 3);
+  ctx.fillStyle = WOOD.dark;
+  ctx.fillRect(postX - 2, postTop, POST.w + 4, 1);
+
+  for (const bandY of [postTop + 8, postTop + 18]) {
+    ctx.fillStyle = PLATE.kerbDark;
+    ctx.fillRect(postX - 1, bandY, POST.w + 2, 3);
+    ctx.fillStyle = PLATE.kerb;
+    ctx.fillRect(postX - 1, bandY, POST.w + 2, 2);
+    ctx.fillStyle = PLATE.kerbLit;
+    ctx.fillRect(postX - 1, bandY, POST.w + 2, 1);
   }
-  if (context.map.tileAt(tx + 1, ty) === TILE_CHARS.bridge) {
-    ctx.moveTo(screenX + TILE * 0.65, screenY + TILE * 0.28);
-    ctx.lineTo(screenX + TILE * 1.5, screenY + TILE * 0.28);
-  }
-  ctx.stroke();
 
-  const cut = context.cutTile;
-  if (!cut || cut.x !== tx || cut.y !== ty || cut.cut || cut.progress <= 0) return;
+  if (cutting <= 0 || !toRight) return;
 
-  const barWidth = Math.round(TILE * 0.6);
-  const barHeight = 6;
-  const barX = screenX + Math.round((TILE - barWidth) / 2);
-  const barY = screenY + TILE - 10;
+  // The bite: an opening notch, with the pale inside of the rope showing.
+  const depth = 1 + Math.round(cutting * 3);
+  ctx.fillStyle = ROPE.dark;
+  ctx.fillRect(biteX, ropeY - 3, 2, 7);
+  ctx.fillStyle = ROPE.frayed;
+  ctx.fillRect(biteX, ropeY - depth + 1, 2, depth);
 
-  ctx.fillStyle = "rgba(0,0,0,0.35)";
-  ctx.fillRect(barX, barY, barWidth, barHeight);
-  ctx.fillStyle = "#ffcc00";
-  ctx.fillRect(
-    barX + 1,
-    barY + 1,
-    Math.max(0, Math.round((barWidth - 2) * cut.progress)),
-    barHeight - 2,
-  );
+  // Fibres springing loose, flicking with the stroke of the cutter.
+  const flick = Math.round(Math.sin(now * 0.02));
+  const flick2 = Math.round(Math.sin(now * 0.02 + 2));
+  ctx.fillRect(biteX - 2, ropeY - 3 + flick, 1, 1);
+  ctx.fillRect(biteX + 2, ropeY + 3 + flick2, 1, 1);
+  ctx.fillRect(biteX - 3, ropeY + 2 - flick2, 1, 1);
 };
 
-/** Plank decking, lit along the top edge and shadowed underneath. */
+/** One plank of decking and the gap after it, in pixels. */
+const PLANK = { width: 7, gap: 1 } as const;
+
+/** Where the bearer rope runs, measured down from the top of the tile. */
+const DECK = { height: 9, bearerY: 9 } as const;
+
+/**
+ * A rope bridge: plank decking on a bearer rope, lashed at every board.
+ *
+ * It used to fill its whole tile with timber, which is why a span read as a
+ * wall laid flat rather than as something you could fall off. The deck is only
+ * as thick as a board now and everything under it is left open, so the drop is
+ * visible through the bridge.
+ */
 const drawBridge = (
   ctx: CanvasRenderingContext2D,
   screenX: number,
   screenY: number,
 ): void => {
-  ctx.fillStyle = WOOD.mid;
-  ctx.fillRect(screenX, screenY, TILE, TILE);
-  ctx.fillStyle = WOOD.light;
-  ctx.fillRect(screenX, screenY, TILE, 3);
+  const step = PLANK.width + PLANK.gap;
 
-  // Board seams, and the gaps you can see daylight through.
-  ctx.fillStyle = WOOD.dark;
-  for (let x = 0; x < TILE; x += 8) ctx.fillRect(screenX + x, screenY, 1, TILE);
-  ctx.fillStyle = WOOD.grain;
-  ctx.fillRect(screenX, screenY + 11, TILE, 1);
-  ctx.fillRect(screenX, screenY + 21, TILE, 1);
+  // The bearer the boards are lashed to, drawn first so it passes behind them.
+  ctx.fillStyle = ROPE.dark;
+  ctx.fillRect(screenX, screenY + DECK.bearerY, TILE, 2);
+  ctx.fillStyle = ROPE.mid;
+  ctx.fillRect(screenX, screenY + DECK.bearerY, TILE, 1);
 
-  ctx.fillStyle = "rgba(0,0,0,0.3)";
-  ctx.fillRect(screenX, screenY + TILE - 4, TILE, 4);
+  for (let x = 0; x < TILE; x += step) {
+    const left = screenX + x;
+
+    ctx.fillStyle = WOOD.mid;
+    ctx.fillRect(left, screenY, PLANK.width, DECK.height);
+    // Lit where boots land, shadowed on the underside and the trailing edge.
+    ctx.fillStyle = WOOD.light;
+    ctx.fillRect(left, screenY, PLANK.width, 2);
+    ctx.fillStyle = WOOD.dark;
+    ctx.fillRect(left, screenY + DECK.height - 2, PLANK.width, 2);
+    ctx.fillRect(left + PLANK.width - 1, screenY, 1, DECK.height);
+    ctx.fillStyle = WOOD.grain;
+    ctx.fillRect(left + 1, screenY + 4, PLANK.width - 3, 1);
+
+    // The lashing holding this board to the bearer.
+    ctx.fillStyle = ROPE.lit;
+    ctx.fillRect(left + 2, screenY + DECK.height - 3, 1, 5);
+    ctx.fillStyle = ROPE.dark;
+    ctx.fillRect(left + 3, screenY + DECK.height - 3, 1, 5);
+  }
 };
 
 /** Pressure plate; turns green while the player stands on it. */
+/** The plate's geometry within its tile, in pixels. */
+const PLATE_ART = {
+  /** Clear of the tile edges, so the kerb reads as set into the floor. */
+  margin: 2,
+  kerbH: 4,
+  faceH: 5,
+  /** How far the face stands above the kerb before it is stepped on. */
+  travel: 2,
+} as const;
+
+/**
+ * A pressure plate: an iron face on a stone kerb, sunk into the floor.
+ *
+ * It was a flat orange square with a dark square inside it, which read as a
+ * marker rather than as a thing in the world. The plate now sits on the floor
+ * of its tile like the other props, and its state shows in two ways: the face
+ * drops flush with the kerb once it has been stepped on, and the lamp between
+ * the rivets changes colour. The travel alone is two pixels, which is not
+ * something a player can see mid-jump, so the lamp carries the reading.
+ */
 const drawTrap = (
   ctx: CanvasRenderingContext2D,
   screenX: number,
@@ -691,19 +885,123 @@ const drawTrap = (
   ty: number,
   context: TileDrawContext,
 ): void => {
-  ctx.fillStyle = context.activatedTraps.has(tileKey(tx, ty)) ? "#4caf50" : "#ff9800";
-  ctx.fillRect(screenX, screenY, TILE, TILE);
-  ctx.fillStyle = "#333";
-  ctx.fillRect(screenX + 8, screenY + 8, TILE - 16, TILE - 16);
+  const spent = context.activatedTraps.has(tileKey(tx, ty));
+  const { margin, kerbH, faceH, travel } = PLATE_ART;
+
+  const left = screenX + margin;
+  const width = TILE - margin * 2;
+  const kerbTop = screenY + TILE - kerbH;
+  const faceTop = kerbTop - faceH + (spent ? travel : 0);
+
+  // The stone kerb the plate is bedded into.
+  ctx.fillStyle = PLATE.kerbDark;
+  ctx.fillRect(left, kerbTop, width, kerbH);
+  ctx.fillStyle = PLATE.kerb;
+  ctx.fillRect(left, kerbTop, width, kerbH - 1);
+  ctx.fillStyle = PLATE.kerbLit;
+  ctx.fillRect(left, kerbTop, width, 1);
+
+  // The recess the face travels in: dark, and taller while the face is raised.
+  ctx.fillStyle = PLATE.socket;
+  ctx.fillRect(left + 1, faceTop + faceH - 1, width - 2, kerbTop - faceTop - faceH + 2);
+
+  // The iron face, bevelled so it reads as a slab rather than a stripe.
+  const faceLeft = left + 2;
+  const faceWidth = width - 4;
+  ctx.fillStyle = PLATE.faceDark;
+  ctx.fillRect(faceLeft, faceTop, faceWidth, faceH);
+  ctx.fillStyle = PLATE.face;
+  ctx.fillRect(faceLeft, faceTop, faceWidth, faceH - 1);
+  ctx.fillStyle = PLATE.faceLit;
+  ctx.fillRect(faceLeft, faceTop, faceWidth, 1);
+
+  // Brass rivets holding the face down, one at each end.
+  ctx.fillStyle = PLATE.rivet;
+  ctx.fillRect(faceLeft + 1, faceTop + 1, 2, 2);
+  ctx.fillRect(faceLeft + faceWidth - 3, faceTop + 1, 2, 2);
+
+  // The lamp, with a bloom around it so it carries at a distance.
+  const lampX = screenX + TILE / 2 - 1;
+  const lampY = faceTop + 1;
+  ctx.fillStyle = spent ? PLATE.spentGlow : PLATE.armedGlow;
+  ctx.fillRect(lampX - 2, lampY - 1, 6, 4);
+  ctx.fillStyle = spent ? PLATE.spent : PLATE.armed;
+  ctx.fillRect(lampX, lampY, 2, 2);
 };
 
+/** The flag's geometry within its tile, in pixels. */
+const FLAG_ART = {
+  poleX: 9,
+  poleW: 3,
+  poleTop: 3,
+  clothTop: 6,
+  clothW: 17,
+  clothH: 12,
+} as const;
+
+/** How the banner moves: sway in pixels, speed, and ripples across its width. */
+const FLAG_WAVE = { sway: 2.4, speed: 0.005, ripples: 7 } as const;
+
+/**
+ * The level exit: a banner on a pole.
+ *
+ * Drawn as one-pixel columns rather than as a rectangle, each offset by a
+ * travelling sine. Cloth pinned along a pole cannot move at its fixed edge and
+ * moves most at its free one, so the sway is scaled by the distance out — that
+ * alone is most of what makes it read as cloth instead of a card.
+ *
+ * Each column is then lit by which way the wave is turning under it, taken from
+ * the slope of the same sine: a fold rolling toward the light catches it and
+ * the back of a fold does not. Three flat tones rather than a gradient, because
+ * at twelve pixels tall a blend is just mud.
+ */
 const drawFinishFlag = (
   ctx: CanvasRenderingContext2D,
   screenX: number,
   screenY: number,
+  now: number,
 ): void => {
-  ctx.fillStyle = "#8b8b8b";
-  ctx.fillRect(screenX + TILE / 2 - 2, screenY + 4, 4, TILE - 8);
-  ctx.fillStyle = "#ff2d55";
-  ctx.fillRect(screenX + TILE / 2 + 2, screenY + 6, TILE / 2 - 4, TILE / 3);
+  const { poleX, poleW, poleTop, clothTop, clothW, clothH } = FLAG_ART;
+  const x = screenX + poleX;
+
+  // The pole, lit down one side so it reads as round rather than as a bar.
+  ctx.fillStyle = FLAG.poleDark;
+  ctx.fillRect(x, screenY + poleTop, poleW, TILE - poleTop);
+  ctx.fillStyle = FLAG.pole;
+  ctx.fillRect(x, screenY + poleTop, poleW - 1, TILE - poleTop);
+  ctx.fillStyle = FLAG.poleLit;
+  ctx.fillRect(x, screenY + poleTop, 1, TILE - poleTop);
+
+  // A brass finial, and a socket where the pole meets the ground.
+  ctx.fillStyle = FLAG.finial;
+  ctx.fillRect(x, screenY + poleTop - 3, poleW, 3);
+  ctx.fillRect(x - 1, screenY + poleTop - 2, poleW + 2, 1);
+  ctx.fillStyle = FLAG.poleDark;
+  ctx.fillRect(x - 2, screenY + TILE - 3, poleW + 4, 3);
+
+  const clothX = x + poleW;
+  const top = screenY + clothTop;
+
+  for (let column = 0; column < clothW; column++) {
+    // 0 at the pole, 1 at the free edge.
+    const out = column / (clothW - 1);
+    const phase = now * FLAG_WAVE.speed - out * FLAG_WAVE.ripples;
+    const sway = Math.sin(phase) * FLAG_WAVE.sway * out;
+    const turn = Math.cos(phase) * out;
+
+    // The first columns are gathered against the pole and sit in its shadow.
+    const tone =
+      column < 2
+        ? FLAG.clothHem
+        : turn > 0.35
+          ? FLAG.clothLit
+          : turn < -0.35
+            ? FLAG.clothShade
+            : FLAG.cloth;
+
+    ctx.fillStyle = tone;
+    // The far edge hangs slightly shorter, as a loose corner does.
+    const height = clothH - Math.round(out * 2);
+    ctx.fillRect(clothX + column, Math.round(top + sway), 1, height);
+  }
 };

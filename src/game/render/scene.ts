@@ -43,9 +43,10 @@ const renderTiles = (
   renderer: SceneRenderer,
   world: GameWorld,
   fullHeightLava: boolean,
+  now: number,
 ): void => {
   const { camera, map } = world;
-  const context = tileDrawContext(world, fullHeightLava);
+  const context = tileDrawContext(world, fullHeightLava, now);
 
   const startCol = Math.floor(camera.x / TILE);
   const endCol = Math.ceil((camera.x + camera.width) / TILE);
@@ -78,7 +79,7 @@ export const renderScene = (
   const { atlas } = renderer;
 
   renderer.background.draw(ctx, canvasWidth, canvasHeight, camera, frame.now);
-  renderTiles(ctx, renderer, world, frame.fullHeightLava);
+  renderTiles(ctx, renderer, world, frame.fullHeightLava, frame.now);
 
   for (const enemy of world.enemies) {
     const screen = toScreen(camera, enemy.x, enemy.y);

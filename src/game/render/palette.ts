@@ -102,6 +102,61 @@ export const LAVA = {
   crust: "#ffd66b",
 } as const;
 
+/**
+ * The finish flag.
+ *
+ * Three cloth tones rather than a blend: the banner is lit by which way each
+ * fold happens to be turned, and hard bands read as folds at this size where a
+ * smooth gradient just looks blurred.
+ */
+export const FLAG = {
+  cloth: "#c8342f",
+  clothLit: "#e8564a",
+  clothShade: "#7e1b1b",
+  /** The strip in the pole's own shadow, where the cloth is gathered. */
+  clothHem: "#5e1414",
+  poleLit: "#cfd4d8",
+  pole: "#9aa0a6",
+  poleDark: "#565c62",
+  finial: "#c9a34d",
+} as const;
+
+/**
+ * The pressure plate that opens a wall.
+ *
+ * Iron set into a stone kerb, with a lamp that reads its state from across the
+ * level: the plate itself changes only by a couple of pixels of travel, which
+ * is far too subtle to play off on its own.
+ */
+export const PLATE = {
+  kerb: "#5d5f63",
+  kerbLit: "#8b8f94",
+  kerbDark: "#34383c",
+  face: "#7d8288",
+  faceLit: "#b3b9bf",
+  faceDark: "#4c5156",
+  socket: "#1d1a18",
+  rivet: "#c9a34d",
+  /** Lamp colours: armed, then spent once it has been stepped on. */
+  armed: "#ff6a3d",
+  armedGlow: "rgba(255, 106, 61, 0.55)",
+  spent: "#5ad06a",
+  spentGlow: "rgba(90, 208, 106, 0.5)",
+} as const;
+
+/**
+ * Hemp rope, for the bridge's bearers and the line the post holds.
+ *
+ * `frayed` is the pale inside of the cordage, only seen where the cutter has
+ * opened it up.
+ */
+export const ROPE = {
+  lit: "#c9a978",
+  mid: "#9c7b4e",
+  dark: "#5f4829",
+  frayed: "#e6d2a8",
+} as const;
+
 export const WOOD = {
   light: "#a97c4d",
   mid: "#8a6038",

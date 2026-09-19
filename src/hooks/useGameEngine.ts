@@ -44,6 +44,8 @@ export interface GameEngineState {
   stars: number;
   /** The boss's remaining health, or null while no boss bar should show. */
   bossHealth: number | null;
+  /** The rope being cut and how far through it is, or null when not cutting. */
+  cutProgress: { x: number; y: number; progress: number } | null;
   ammo: Ammo;
   hasWeapon: boolean;
   weaponType: WeaponType | null;
@@ -90,6 +92,11 @@ export const useGameEngine = (refs: GameElementRefs): GameEngineState => {
   const [showHud, setShowHud] = useState(false);
   /** The boss bar waits for the opening cutscene, like the rest of the HUD. */
   const [bossEngaged, setBossEngaged] = useState(false);
+  const [cutProgress, setCutProgress] = useState<{
+    x: number;
+    y: number;
+    progress: number;
+  } | null>(null);
   const [blackOverlay, setBlackOverlay] = useState(true);
   const [blackOverlayOpacity, setBlackOverlayOpacity] = useState(1);
   const [showEndScreen, setShowEndScreen] = useState(false);
@@ -377,6 +384,7 @@ export const useGameEngine = (refs: GameElementRefs): GameEngineState => {
       setCutsceneActive,
       setShowHud,
       setBossEngaged,
+      setCutProgress,
       setIntroActive,
       setBlackOverlay,
       setBlackOverlayOpacity,
@@ -430,6 +438,7 @@ export const useGameEngine = (refs: GameElementRefs): GameEngineState => {
     health,
     stars: collectedStars,
     bossHealth: bossEngaged ? bossHealth : null,
+    cutProgress,
     ammo,
     hasWeapon,
     weaponType,
