@@ -1,6 +1,5 @@
 import GamePage from "../pages/GamePage";
 import HomePage from "../pages/HomePage";
-import MessagePage from "../pages/MessagePage";
 import { resolveRoute, type RouteName } from "./routes";
 
 import "../styles/global.css";
@@ -8,7 +7,6 @@ import "../styles/animations.css";
 
 const PAGES: Record<RouteName, () => React.ReactElement> = {
   home: HomePage,
-  message: MessagePage,
   game: GamePage,
 };
 

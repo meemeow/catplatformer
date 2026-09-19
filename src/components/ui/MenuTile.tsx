@@ -3,7 +3,7 @@ interface MenuTileProps {
   label: string;
   /** Animated illustration for the tile. */
   artSrc: string;
-  /** Modifier suffix picking the art's size, e.g. "book" or "game". */
+  /** Modifier suffix picking the art's size, e.g. "game". */
   artVariant: string;
   /** Pixel-art wordmark shown beneath the illustration. */
   labelSrc: string;

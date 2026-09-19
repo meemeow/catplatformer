@@ -6,12 +6,10 @@
 export const IMAGES = {
   back: "/images/back.png",
   bananaCatHeart: "/images/bananacatheart.png",
-  bookMessage: "/images/book_message.png",
   /** The play-area frame. Referenced by URL from `styles/pages/game.css`. */
   frame: "/images/cattachasm_border.png",
   catDead: "/images/catded.png",
   cutter: "/images/cutter.png",
-  message: "/images/message.png",
   play: "/images/play.png",
   sheriff: "/images/sheriff.webp",
   sniper: "/images/sniper.png",
@@ -22,7 +20,6 @@ export const IMAGES = {
 export const GIFS = {
   bananaCat: "/others/bananacat.gif",
   background: "/others/bg.gif",
-  book: "/others/book.gif",
   bossAngry: "/others/catbossangry.gif",
   bossExplaining: "/others/catbossexplaining.gif",
   bossMain: "/others/catbossmain.gif",

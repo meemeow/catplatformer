@@ -1,4 +1,4 @@
-/* Title screen and the two-tile main menu. */
+/* Title screen and the main menu. */
 
 .start-button {
   display: inline-block;
@@ -42,12 +42,6 @@
 .menu-tile__art {
   display: block;
   height: auto;
-}
-
-/* The book art is small, so it is padded up to match the game tile's mass. */
-.menu-tile__art--book {
-  width: 140px;
-  padding: 70px 40px 0;
 }
 
 .menu-tile__art--game {

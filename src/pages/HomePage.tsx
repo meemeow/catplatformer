@@ -10,8 +10,8 @@ import "../styles/pages/home.css";
  * The title screen.
  *
  * `started` reproduces the original flag: the menu was only ever meant to show
- * on `/games`, but that path renders the game itself, so in practice this page
- * always shows the start button. The menu branch is kept intact rather than
+ * on `/cattachasm`, but that path renders the game itself, so in practice
+ * this page always shows the start button. The menu branch is kept intact rather than
  * deleted, since wiring it up is a routing decision, not a refactor.
  */
 const HomePage = () => {
@@ -47,13 +47,6 @@ const HomePage = () => {
     <div className="screen screen--column">
       <BackButton href={ROUTES.home} />
       <nav className="main-menu" aria-label="Main menu">
-        <MenuTile
-          href={ROUTES.message}
-          label="Message"
-          artSrc={GIFS.book}
-          artVariant="book"
-          labelSrc={IMAGES.message}
-        />
         <MenuTile
           href={ROUTES.game}
           label="Play"

@@ -1,8 +1,7 @@
 /** Canonical paths. Anything that navigates should reference these. */
 export const ROUTES = {
   home: "/",
-  message: "/message",
-  game: "/games",
+  game: "/cattachasm",
 } as const;
 
 export type RouteName = keyof typeof ROUTES;
@@ -14,8 +13,7 @@ export type RouteName = keyof typeof ROUTES;
  */
 const ALIASES: Record<RouteName, readonly string[]> = {
   home: [ROUTES.home],
-  message: [ROUTES.message, "/messages"],
-  game: [ROUTES.game, "/game"],
+  game: [ROUTES.game, "/games", "/game"],
 };
 
 /** Resolves a pathname to a route, falling back to the title screen. */
