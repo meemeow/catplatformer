@@ -1,7 +1,10 @@
 /*
  * Vertical master-volume control, fixed to the right edge of the game screen.
  *
- * The readout sits on top and the speaker below, so louder is literally higher.
+ * Built as a timber post with brass fittings from the shared wood tokens, so
+ * it reads as part of the world rather than as browser chrome sitting beside
+ * it. The readout sits on top and the speaker below, so louder is literally
+ * higher.
  */
 .volume {
   position: fixed;
@@ -12,20 +15,66 @@
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  padding: 12px 10px;
-  border: 2px solid rgba(0, 0, 0, 0.35);
-  border-radius: var(--radius-lg);
-  background: var(--color-panel-solid);
+  padding: 14px 10px;
+  border: 5px solid var(--wood-light);
+  border-radius: 7px;
+  background-color: var(--wood-mid);
+  background-image:
+    linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.42) 0%,
+      rgba(0, 0, 0, 0) 15%,
+      rgba(0, 0, 0, 0) 85%,
+      rgba(0, 0, 0, 0.46) 100%
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      var(--wood-mid) 0 11px,
+      var(--wood-dark) 11px 12px,
+      var(--wood-mid) 12px 13px
+    );
+  /* Same iron banding as the dialogue panel: a dark keyline inside and out,
+     sandwiching the lit edge, which is what makes the timber read as solid. */
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.46),
+    inset 0 0 0 2px var(--wood-edge),
+    inset 0 0 18px rgba(0, 0, 0, 0.5),
+    0 0 0 3px var(--wood-edge),
+    0 10px 24px rgba(0, 0, 0, 0.6);
   transform: translateY(-50%);
   user-select: none;
 }
 
+/* Brass caps, the fittings that band the top and bottom of the post. */
+.volume::before,
+.volume::after {
+  content: "";
+  position: absolute;
+  right: -2px;
+  left: -2px;
+  height: 5px;
+  background: linear-gradient(var(--brass), var(--brass-dark));
+  pointer-events: none;
+}
+
+.volume::before {
+  top: -2px;
+}
+
+.volume::after {
+  bottom: -2px;
+  background: linear-gradient(var(--brass-dark), var(--brass));
+}
+
 .volume__readout {
   min-width: 3ch;
-  color: var(--color-text-light);
+  color: var(--brass);
   font-family: var(--font-pixel);
   font-size: 12px;
+  font-weight: 700;
   text-align: center;
+  text-shadow: 1px 1px 0 var(--wood-edge);
   font-variant-numeric: tabular-nums;
 }
 
@@ -40,35 +89,77 @@
  * (`::-webkit-slider-thumb`, `::-moz-range-thumb`) disagree about which axis is
  * which once the control is rotated, and get it wrong in different ways per
  * engine. Native parts stay correct everywhere.
+ *
+ * The element's own background is fair game though, and sits behind the native
+ * track: a dark channel with an inset shadow, so the slider looks routed into
+ * the timber rather than laid on top of it.
  */
 .volume__slider {
-  width: 24px;
+  width: 22px;
   height: 160px;
   margin: 0;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    rgba(0, 0, 0, 0.55),
+    rgba(0, 0, 0, 0.24) 45%,
+    rgba(0, 0, 0, 0.55)
+  );
+  box-shadow:
+    inset 0 0 0 1px var(--wood-edge),
+    inset 0 2px 6px rgba(0, 0, 0, 0.65);
   writing-mode: vertical-lr;
   direction: rtl;
-  accent-color: #ffd966;
+  accent-color: var(--brass);
   cursor: pointer;
 }
 
 .volume__slider:focus-visible {
-  outline: 2px solid #ffd966;
+  outline: 2px solid var(--brass);
   outline-offset: 3px;
-  border-radius: var(--radius-sm);
 }
 
+/* A brass-rimmed stud, pressed into the post. */
 .volume__mute {
-  padding: 2px 4px;
-  border: none;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  font-size: 18px;
+  display: flex;
+  width: 28px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--wood-edge);
+  border-radius: 4px;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.09),
+    rgba(0, 0, 0, 0.26)
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 1px 0 rgba(0, 0, 0, 0.45);
+  font-size: 14px;
   line-height: 1;
   cursor: pointer;
+  /* The speaker is a colour emoji, so it cannot be recoloured directly; the
+     tint pulls it toward the brass rather than leaving it stock blue. */
+  filter: sepia(0.7) saturate(1.7) hue-rotate(-8deg) brightness(1.05);
 }
 
 .volume__mute:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.17),
+    rgba(0, 0, 0, 0.2)
+  );
+}
+
+.volume__mute:active {
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.55);
+}
+
+.volume__mute:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
 }
 
 /* On short screens the control would overlap the frame, so shrink it. */

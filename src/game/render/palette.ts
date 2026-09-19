@@ -6,52 +6,41 @@
  */
 
 export const SKY = {
-  top: "#3f8ed0",
-  mid: "#74bce6",
-  horizon: "#c3e6f4",
+  // Sampled from the sky swatch on the asset sheet; the horizon matches the
+  // haze the mountain layers wash toward, so the two meet without a seam.
+  top: "#4f95dd",
+  mid: "#6fb0e6",
+  horizon: "#c3e2f4",
   sun: "rgba(255,247,214,1)",
   sunGlow: "rgba(255,214,120,0)",
 } as const;
 
-export const CLOUD = {
-  body: "#ffffff",
-  shade: "#d9e9f6",
-  rim: "#bcd6e9",
-} as const;
-
-/** Far layers are paler and bluer, which reads as distance. */
-export const MOUNTAIN = [
-  { base: "#93b2cc", light: "#c2d9ea", foot: 140, peaks: 5, parallax: 0.18 },
-  { base: "#6f93b6", light: "#9cbad4", foot: 200, peaks: 4, parallax: 0.36 },
-  { base: "#4f6f8e", light: "#7893b0", foot: 260, peaks: 3, parallax: 0.6 },
-] as const;
-
 export const GRASS = {
-  highlight: "#8ade5c",
-  top: "#6ec244",
-  body: "#54a232",
-  shadow: "#3c7a25",
-  deep: "#2e5c1c",
+  highlight: "#7fd04f",
+  top: "#5cb038",
+  body: "#46912c",
+  shadow: "#2f6c1f",
+  deep: "#1f4c14",
 } as const;
 
 export const DIRT = {
-  top: "#7c5433",
-  mid: "#5f3f26",
-  bottom: "#48301c",
-  speckLight: "#8b6540",
-  speckDark: "#3c2716",
-  pebble: "#9d8468",
-  root: "rgba(48,28,14,0.42)",
+  top: "#6b492b",
+  mid: "#563a21",
+  bottom: "#3f2a17",
+  speckLight: "#7e5a38",
+  speckDark: "#33210f",
+  pebble: "#8f7658",
+  root: "rgba(40,24,10,0.45)",
 } as const;
 
 export const STONE = {
-  brick: "#78866f",
-  brickAlt: "#6d7b65",
-  bevel: "#98a68c",
-  shade: "#55614f",
-  mortar: "#39412f",
-  moss: "#4f8f3a",
-  mossDark: "#3a6b2a",
+  brick: "#6c7a64",
+  brickAlt: "#61705a",
+  bevel: "#8d9b81",
+  shade: "#47523f",
+  mortar: "#2c3325",
+  moss: "#4a8735",
+  mossDark: "#325f25",
 } as const;
 
 export const ROCK = {

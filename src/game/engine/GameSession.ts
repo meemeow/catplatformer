@@ -168,6 +168,8 @@ export class GameSession {
     if (world.reward) this.sprites?.addReward();
 
     resetLevelFlags(this.flags);
+    // `sprites.clear()` above took the corpse with it, so the handle is stale.
+    this.deathEffect = null;
     this.flags.deathActive = false;
     this.flags.starsAtLevelStart = this.flags.collectedStars;
     this.flags.showFirstStarBubble =
@@ -181,6 +183,9 @@ export class GameSession {
     this.bridge.setHealth(INITIAL_HEALTH);
 
     this.world = world;
+    // A reloaded level brings a fresh camera, and a restart does not resize
+    // the canvas, so the viewport has to be restored here too.
+    this.syncCameraViewport();
     return world;
   }
 
@@ -189,7 +194,23 @@ export class GameSession {
     const { canvas } = this.elements;
     canvas.width = this.world.map.widthPx;
     canvas.height = this.world.map.heightPx;
+    this.syncCameraViewport();
     this.bridge.setCanvasSize({ w: canvas.width, h: canvas.height });
+  }
+
+  /**
+   * Gives the camera the canvas it draws into.
+   *
+   * The viewport is a property of the canvas, not of whether the game is
+   * running, but `followPlayer` is the only other thing that sets it and the
+   * loop skips that while paused outside the intro. Since `renderTiles` walks
+   * the visible range from these two numbers, a session that starts paused
+   * would otherwise paint its background and not a single tile.
+   */
+  private syncCameraViewport(): void {
+    const { canvas } = this.elements;
+    this.world.camera.width = canvas.width;
+    this.world.camera.height = canvas.height;
   }
 
   clearInput(): void {
@@ -210,11 +231,16 @@ export class GameSession {
   restartLevel(reason: string): void {
     const { flags, bridge } = this;
 
-    flags.deathActive = false;
+    // `deathActive` is deliberately left set: it is what keeps the living cat
+    // hidden, and clearing it here would put it back on screen, alive, for the
+    // whole length of the banner. `loadLevel` clears it once the level is gone.
     bridge.setCollectedStars(flags.starsAtLevelStart);
     bridge.setPaused(true);
     bridge.setCompletionMessage(`${reason}! Restarting level...`);
+    // Cancelling the timers orphans any animation they were due to remove, so
+    // sweep now rather than leaving corpses on screen behind the banner.
     this.timers.clearAll();
+    this.sprites?.clearEffects();
 
     this.timers.setTimeout(() => {
       bridge.setCompletionMessage(null);
@@ -266,9 +292,9 @@ export class GameSession {
     this.audio.play("playerDeath");
     this.audio.onEnded("playerDeath", () => {
       this.timers.setTimeout(() => {
-        this.deathEffect?.remove();
-        this.deathEffect = null;
-        this.flags.deathActive = false;
+        // The corpse stays, and so does `deathActive`: the cat should not be
+        // standing there alive while the restart banner is up. `loadLevel`
+        // clears both once the new level is built.
         this.bridge.setCompletionMessage(null);
         this.restartLevel(reason);
       }, TIMINGS.deathRespawnDelayMs);

@@ -40,7 +40,7 @@
 /* Sits above everything while the death animation plays out. */
 .game-sprite--death {
   z-index: var(--z-chrome);
-  width: 70px;
+  width: 88px;
   height: auto;
   transform-origin: center bottom;
 }

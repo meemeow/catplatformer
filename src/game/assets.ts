@@ -8,7 +8,7 @@ export const IMAGES = {
   bananaCatHeart: "/images/bananacatheart.png",
   bookMessage: "/images/book_message.png",
   /** The play-area frame. Referenced by URL from `styles/pages/game.css`. */
-  frame: "/images/Cattachasm_border.png",
+  frame: "/images/cattachasm_border.png",
   catDead: "/images/catded.png",
   cutter: "/images/cutter.png",
   message: "/images/message.png",
@@ -55,4 +55,30 @@ export const SOUNDS = {
   sheriffShot: "/sounds/sheriffsound.mp3",
   sniperShot: "/sounds/snipersound.mp3",
   yapapa: "/sounds/yapapa.mp3",
+} as const;
+
+/**
+ * Terrain and sky art, diced out of `background_assets.jpg` with its white
+ * matte cut to transparency. Drawn to the canvas, never referenced from CSS.
+ */
+export const TERRAIN = {
+  clouds: [
+    "/images/terrain/cloud-1.png",
+    "/images/terrain/cloud-2.png",
+    "/images/terrain/cloud-3.png",
+    "/images/terrain/cloud-4.png",
+  ],
+  /** A lone summit, used sparsely on the farthest parallax layer. */
+  peak: "/images/terrain/peak.png",
+  /** A full ridge line, repeated to build the two nearer layers. */
+  range: "/images/terrain/range.png",
+  /** A decorative boulder, drawn as a cut-out prop rather than a full cell. */
+  rock: "/images/terrain/rock.png",
+  brick: "/images/terrain/brick.png",
+  dirt: [
+    "/images/terrain/dirt-1.png",
+    "/images/terrain/dirt-2.png",
+    "/images/terrain/dirt-3.png",
+  ],
+  grass: ["/images/terrain/grass-1.png", "/images/terrain/grass-2.png"],
 } as const;

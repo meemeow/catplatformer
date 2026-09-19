@@ -1,4 +1,5 @@
 import { GIFS } from "../assets";
+import { DEATH_CLASS, EFFECT_CLASS } from "./effects";
 import { REWARD_SCALE, SCALE } from "../constants";
 import type { Boss, Camera, Enemy, Reward } from "../types";
 
@@ -127,6 +128,20 @@ export class SpriteLayer {
     );
   }
 
+  /**
+   * Removes death and hand-over animations still in the layer.
+   *
+   * These are appended here but deliberately not tracked, so that a detached
+   * enemy can keep animating after the sync loop lets go of it. Their only
+   * cleanup is a timer, and a level reset cancels every timer, which would
+   * otherwise strand them on screen for the rest of the session.
+   */
+  clearEffects(): void {
+    for (const el of this.parent.querySelectorAll(`.${EFFECT_CLASS}`)) {
+      el.remove();
+    }
+  }
+
   /** Removes every sprite. Called on level change and on unmount. */
   clear(): void {
     for (const img of this.enemies.values()) img.remove();
@@ -134,6 +149,12 @@ export class SpriteLayer {
     this.removeBoss();
     this.rewardEl?.remove();
     this.rewardEl = null;
+    this.clearEffects();
+    // The corpse is exempt from `clearEffects` so it can sit behind the restart
+    // banner, which makes the level load the one place that clears it.
+    for (const el of this.parent.querySelectorAll(`.${DEATH_CLASS}`)) {
+      el.remove();
+    }
   }
 }
 

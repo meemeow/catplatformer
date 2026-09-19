@@ -1,11 +1,60 @@
 import type { Camera } from "../types";
-import { CLOUD, MOUNTAIN, SKY } from "./palette";
-import { createSeededRandom } from "./random";
+import { SKY } from "./palette";
+import { isReady, TEXTURES } from "./textures";
 
-/** Vertical quantisation of the ridge line, for a stepped pixel-art edge. */
-const RIDGE_STEP = 3;
-const CLOUD_VARIANTS = 4;
 const CLOUD_COUNT = 7;
+
+/** The haze colour that stands in for distance, matching the sky's horizon. */
+const HAZE = "195,226,244";
+
+/**
+ * One parallax band of mountains.
+ *
+ * `spacing` is how far apart copies of the sprite sit as a multiple of its
+ * drawn width: below 1 they overlap into a continuous ridge, above 1 they
+ * stand alone with sky between them. `footFrac` places the base as a fraction
+ * of canvas height, so the composition holds at any viewport size.
+ */
+interface MountainLayer {
+  sprite: HTMLImageElement;
+  scale: number;
+  spacing: number;
+  footFrac: number;
+  parallax: number;
+  /** Aerial perspective: how far each band washes out toward the haze. */
+  hazeTop: number;
+  hazeFoot: number;
+}
+
+const mountainLayers = (): MountainLayer[] => [
+  {
+    sprite: TEXTURES.peak,
+    scale: 0.52,
+    spacing: 1.7,
+    footFrac: 0.55,
+    parallax: 0.16,
+    hazeTop: 0.44,
+    hazeFoot: 0.72,
+  },
+  {
+    sprite: TEXTURES.range,
+    scale: 0.58,
+    spacing: 0.92,
+    footFrac: 0.6,
+    parallax: 0.32,
+    hazeTop: 0.2,
+    hazeFoot: 0.5,
+  },
+  {
+    sprite: TEXTURES.range,
+    scale: 0.88,
+    spacing: 0.88,
+    footFrac: 0.65,
+    parallax: 0.55,
+    hazeTop: 0.04,
+    hazeFoot: 0.28,
+  },
+];
 
 const createLayer = (width: number, height: number) => {
   const canvas = document.createElement("canvas");
@@ -14,134 +63,50 @@ const createLayer = (width: number, height: number) => {
   return { canvas, ctx: canvas.getContext("2d") as CanvasRenderingContext2D };
 };
 
-interface Peak {
-  cx: number;
-  height: number;
-  halfWidth: number;
-}
-
 /**
- * Horizontal distance between two points on a strip that wraps around.
+ * Renders one band of mountains into a strip that tiles horizontally.
  *
- * Using the wrapped distance is what makes a layer tile seamlessly: a peak
- * near one edge also influences the opposite edge, so the two ends line up.
+ * Copies are laid at exact multiples of `step`, and the strip is a whole
+ * number of steps wide, so the content is periodic and the join between two
+ * blits of the strip is invisible. The extra copies either side cover the
+ * sprite overhanging each end.
  */
-const wrappedDistance = (a: number, b: number, width: number): number => {
-  const d = Math.abs(a - b);
-  return Math.min(d, width - d);
-};
-
-/**
- * Renders one parallax layer of mountains into a strip that can be tiled.
- *
- * Peaks are triangular rather than a smooth noise field, which is what gives
- * the hard silhouette the art style depends on, and each tall peak gets a
- * lighter cap so the ridge reads as lit from above.
- */
-const buildMountainLayer = (
+const buildMountainStrip = (
   width: number,
   height: number,
-  layerIndex: number,
+  layer: MountainLayer,
 ): HTMLCanvasElement => {
-  const layer = MOUNTAIN[layerIndex];
   const { canvas, ctx } = createLayer(width, height);
-  const random = createSeededRandom(1013 + layerIndex * 7717);
+  const w = Math.round(layer.sprite.naturalWidth * layer.scale);
+  const h = Math.round(layer.sprite.naturalHeight * layer.scale);
+  const count = Math.max(1, Math.round(width / (w * layer.spacing)));
+  const step = width / count;
+  const baseY = Math.round(height * layer.footFrac);
 
-  const footY = height - layer.foot;
-  const spacing = width / layer.peaks;
-
-  const peaks: Peak[] = [];
-  for (let i = 0; i < layer.peaks; i++) {
-    peaks.push({
-      cx: (i + 0.5) * spacing + (random() - 0.5) * spacing * 0.5,
-      height: layer.foot * (0.45 + random() * 0.5),
-      halfWidth: spacing * (0.55 + random() * 0.35),
-    });
+  for (let i = -1; i <= count; i++) {
+    ctx.drawImage(layer.sprite, Math.round(i * step), baseY - h, w, h);
   }
 
-  /** Upper envelope of every peak's triangle at this column. */
-  const ridgeAt = (x: number): number => {
-    let rise = 0;
-    for (const peak of peaks) {
-      const d = wrappedDistance(x, peak.cx, width);
-      const influence = peak.height * (1 - d / peak.halfWidth);
-      if (influence > rise) rise = influence;
-    }
-    return footY - Math.round(rise / RIDGE_STEP) * RIDGE_STEP;
-  };
-
-  ctx.beginPath();
-  ctx.moveTo(0, ridgeAt(0));
-  for (let x = 1; x <= width; x++) ctx.lineTo(x, ridgeAt(x));
-  ctx.lineTo(width, height);
-  ctx.lineTo(0, height);
-  ctx.closePath();
-
-  ctx.fillStyle = layer.base;
-  ctx.fill();
-
-  // Caps are clipped to the silhouette so they cannot spill past the ridge.
-  ctx.save();
-  ctx.clip();
-  ctx.fillStyle = layer.light;
-  for (const peak of peaks) {
-    if (peak.height < layer.foot * 0.55) continue;
-
-    const apexY = footY - peak.height;
-    const capBottom = apexY + peak.height * 0.28;
-    const spread = peak.halfWidth * 0.3;
-
-    // A stepped lower edge, so the cap does not read as a smooth triangle.
-    ctx.beginPath();
-    ctx.moveTo(peak.cx, apexY);
-    ctx.lineTo(peak.cx + spread, capBottom);
-    ctx.lineTo(peak.cx + spread * 0.45, capBottom - RIDGE_STEP * 2);
-    ctx.lineTo(peak.cx, capBottom);
-    ctx.lineTo(peak.cx - spread * 0.5, capBottom - RIDGE_STEP * 3);
-    ctx.lineTo(peak.cx - spread, capBottom);
-    ctx.closePath();
-    ctx.fill();
-  }
-  ctx.restore();
-
-  return canvas;
-};
-
-/**
- * One cloud, built from overlapping puffs snapped to a 2px grid.
- *
- * The underside is shaded with `source-atop`, which paints only where the
- * cloud already is — cheaper and cleaner than clipping to its outline.
- */
-const buildCloud = (variant: number): HTMLCanvasElement => {
-  const random = createSeededRandom(577 + variant * 331);
-  const width = 130;
-  const height = 60;
-  const { canvas, ctx } = createLayer(width, height);
-
-  const snap = (v: number) => Math.round(v / 2) * 2;
-  const puffs = 4 + Math.floor(random() * 3);
-
-  ctx.fillStyle = CLOUD.body;
-  for (let i = 0; i < puffs; i++) {
-    const t = i / (puffs - 1);
-    const cx = snap(18 + t * (width - 36));
-    // The middle of the cloud sits highest, tapering to the ends.
-    const lift = Math.sin(t * Math.PI);
-    const r = snap(10 + lift * 12 + random() * 5);
-    const cy = snap(height - 16 - lift * 8);
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  // A flat base, so the cloud sits on a line rather than floating as blobs.
-  ctx.fillRect(16, snap(height - 22), width - 32, 14);
-
+  // Aerial perspective: wash the band toward the haze colour, more of it the
+  // further down the slope. `source-atop` keeps it off the sky between peaks.
   ctx.globalCompositeOperation = "source-atop";
-  ctx.fillStyle = CLOUD.shade;
-  ctx.fillRect(0, height - 16, width, 16);
-  ctx.fillStyle = CLOUD.rim;
-  ctx.fillRect(0, height - 8, width, 8);
+  const mist = ctx.createLinearGradient(0, baseY - h, 0, baseY);
+  mist.addColorStop(0, `rgba(${HAZE},${layer.hazeTop})`);
+  mist.addColorStop(1, `rgba(${HAZE},${layer.hazeFoot})`);
+  ctx.fillStyle = mist;
+  ctx.fillRect(0, 0, width, height);
+
+  // Dissolve the foot rather than ending it on a hard line. The ground hides
+  // the base on most levels, but where a level leaves it exposed the range
+  // has to fade into the sky instead of floating above it. The gradient is
+  // filled over the whole strip because `destination-in` erases everything
+  // the fill does not cover, and canvas gradients clamp past their stops.
+  ctx.globalCompositeOperation = "destination-in";
+  const fade = ctx.createLinearGradient(0, baseY - Math.round(h * 0.28), 0, baseY);
+  fade.addColorStop(0, "rgba(0,0,0,1)");
+  fade.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = fade;
+  ctx.fillRect(0, 0, width, height);
   ctx.globalCompositeOperation = "source-over";
 
   return canvas;
@@ -150,25 +115,26 @@ const buildCloud = (variant: number): HTMLCanvasElement => {
 /**
  * Sky, sun, mountains and clouds.
  *
- * Every layer is rendered once into an offscreen strip and then blitted with a
- * parallax offset. The previous version recomputed the ridge line per pixel on
- * every frame; this draws the same picture with a handful of blits.
+ * The mountains are rendered once into offscreen strips and then blitted with
+ * a parallax offset, so a full-screen redraw costs a handful of blits rather
+ * than a per-pixel pass over the ridge line.
  */
 export class BackgroundRenderer {
   private width = 0;
   private height = 0;
-  private mountains: HTMLCanvasElement[] = [];
-  private clouds: HTMLCanvasElement[] = [];
+  private strips: HTMLCanvasElement[] = [];
+  private layers: MountainLayer[] = [];
+  /** Strips built before the art arrived would be blank, so they are rebuilt. */
+  private builtFromTextures = false;
 
   private rebuild(width: number, height: number): void {
     this.width = width;
     this.height = height;
-    this.mountains = MOUNTAIN.map((_, index) =>
-      buildMountainLayer(width, height, index),
-    );
-    if (this.clouds.length === 0) {
-      this.clouds = Array.from({ length: CLOUD_VARIANTS }, (_, i) => buildCloud(i));
-    }
+    this.layers = mountainLayers();
+    this.builtFromTextures = this.layers.every((layer) => isReady(layer.sprite));
+    this.strips = this.builtFromTextures
+      ? this.layers.map((layer) => buildMountainStrip(width, height, layer))
+      : [];
   }
 
   draw(
@@ -178,7 +144,9 @@ export class BackgroundRenderer {
     camera: Camera,
     now: number,
   ): void {
-    if (width !== this.width || height !== this.height) this.rebuild(width, height);
+    if (width !== this.width || height !== this.height || !this.builtFromTextures) {
+      this.rebuild(width, height);
+    }
 
     this.drawSky(ctx, width, height);
     this.drawSun(ctx, width, camera);
@@ -222,8 +190,8 @@ export class BackgroundRenderer {
     width: number,
     camera: Camera,
   ): void {
-    this.mountains.forEach((strip, index) => {
-      const shift = (camera.x * MOUNTAIN[index].parallax) % width;
+    this.strips.forEach((strip, index) => {
+      const shift = (camera.x * this.layers[index].parallax) % width;
       const x = Math.round(shift > 0 ? -shift : -shift - width);
       // Two blits cover the viewport whatever the offset; the strip is built
       // to tile, so the seam between them is invisible.
@@ -241,22 +209,24 @@ export class BackgroundRenderer {
     const span = width + 300;
 
     for (let i = 0; i < CLOUD_COUNT; i++) {
-      const sprite = this.clouds[i % this.clouds.length];
+      const sprite = TEXTURES.cloud[i % TEXTURES.cloud.length];
+      if (!isReady(sprite)) continue;
+
       const speed = 0.02 + (i % 3) * 0.01;
       const drift = now * 0.004 * (1 + (i % 4) * 0.25);
 
       // Positive modulo, so a cloud never jumps when the value crosses zero.
       const raw = i * 197 - camera.x * speed + drift;
       const x = ((raw % span) + span) % span - 200;
-      const y = 26 + (i % 3) * 30;
-      const scale = 0.7 + (i % 3) * 0.25;
+      const y = 40 + (i % 4) * 46;
+      const scale = 0.5 + (i % 3) * 0.11;
 
       ctx.drawImage(
         sprite,
         Math.round(x),
         Math.round(y),
-        Math.round(sprite.width * scale),
-        Math.round(sprite.height * scale),
+        Math.round(sprite.naturalWidth * scale),
+        Math.round(sprite.naturalHeight * scale),
       );
     }
   }

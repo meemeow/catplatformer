@@ -1,4 +1,4 @@
-import { TILE } from "../constants";
+import { ROCK_SCALE, TILE } from "../constants";
 import type { GameMap } from "../core/map";
 import { tileKey } from "../core/map";
 import type { GameWorld } from "../core/world";
@@ -7,6 +7,7 @@ import type { Camera, CutTile } from "../types";
 import { paintRockTile, paintSoilTile, paintStoneBrickTile } from "./tileArt";
 import { LAVA, STONE, WOOD } from "./palette";
 import { tileVariant } from "./random";
+import { isReady, TEXTURES } from "./textures";
 
 /** Everything a tile needs to know about the world to draw itself. */
 export interface TileDrawContext {
@@ -60,21 +61,24 @@ export class TileRenderer {
         this.drawSolid(ctx, screenX, screenY, tx, ty, context);
         break;
       case TILE_CHARS.passableDirt:
-        this.drawCached(
+        this.drawTile(
           ctx,
           screenX,
           screenY,
+          TEXTURES.brick,
           `brick_${tileVariant(tx, ty, 17, 13)}`,
           () => paintStoneBrickTile(tx, ty, tileVariant(tx, ty, 17, 13)),
         );
         break;
       case TILE_CHARS.rock:
-        this.drawCached(
+        this.drawProp(
           ctx,
           screenX,
           screenY,
+          TEXTURES.rock,
           `rock_${tileVariant(tx, ty, 19, 7)}`,
           () => paintRockTile(tx, ty, tileVariant(tx, ty, 19, 7)),
+          ROCK_SCALE,
         );
         break;
       case TILE_CHARS.deactivatedWall:
@@ -118,9 +122,68 @@ export class TileRenderer {
 
     const variant = showGrass ? tileVariant(tx, ty, 31, 17) : 0;
     const key = showGrass ? `soil_grass_${variant}` : "soil_bare";
+    // Buried soil varies on its own seed, so a wall of dirt does not repeat
+    // whichever single tile the grass variant happens to pick.
+    const set = showGrass ? TEXTURES.grass : TEXTURES.dirt;
+    const index = showGrass ? variant : tileVariant(tx, ty, 23, 11);
 
-    this.drawCached(ctx, screenX, screenY, key, () =>
+    this.drawTile(ctx, screenX, screenY, set[index % set.length], key, () =>
       paintSoilTile(tx, ty, variant, showGrass),
+    );
+  }
+
+  /**
+   * Draws a tile from its sheet texture, falling back to the procedural art
+   * for as long as the image is still in flight.
+   *
+   * The textures are the real art; the painters stay so that a cold load, or
+   * a missing file, still shows terrain rather than a hole in the world.
+   */
+  private drawTile(
+    ctx: CanvasRenderingContext2D,
+    screenX: number,
+    screenY: number,
+    texture: HTMLImageElement,
+    key: string,
+    paint: () => HTMLCanvasElement,
+  ): void {
+    if (isReady(texture)) {
+      ctx.drawImage(texture, screenX, screenY, TILE, TILE);
+      return;
+    }
+    this.drawCached(ctx, screenX, screenY, key, paint);
+  }
+
+  /**
+   * Draws a cut-out prop instead of a full tile: scaled to fit the cell with
+   * its proportions intact and resting on the cell floor, so it sits on
+   * whatever is beneath it rather than floating or stretching to a square.
+   */
+  private drawProp(
+    ctx: CanvasRenderingContext2D,
+    screenX: number,
+    screenY: number,
+    texture: HTMLImageElement,
+    key: string,
+    paint: () => HTMLCanvasElement,
+    /** Fraction of the cell the prop fills; 1 fits it to the edges. */
+    fill: number,
+  ): void {
+    if (!isReady(texture)) {
+      this.drawCached(ctx, screenX, screenY, key, paint);
+      return;
+    }
+
+    const scale =
+      Math.min(TILE / texture.naturalWidth, TILE / texture.naturalHeight) * fill;
+    const w = Math.round(texture.naturalWidth * scale);
+    const h = Math.round(texture.naturalHeight * scale);
+    ctx.drawImage(
+      texture,
+      screenX + Math.round((TILE - w) / 2),
+      screenY + TILE - h,
+      w,
+      h,
     );
   }
 

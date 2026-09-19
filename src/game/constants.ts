@@ -16,6 +16,17 @@ export const SCALE = 1.2;
 /** Visual-only multipliers. */
 export const REWARD_SCALE = 1.0;
 export const ENEMY_SCALE = 1.5;
+/**
+ * How much larger the cat is drawn than the box it collides with, per axis.
+ *
+ * Purely cosmetic: the sprite grows from its feet and stays centred on the
+ * hitbox, so every gap, jump and ledge in the levels behaves exactly as before.
+ * The axes are separate so the cat's build can be tuned -- a smaller `x` than
+ * `y` slims it without losing any height.
+ */
+export const PLAYER_SCALE = { x: 1.15, y: 1.35 } as const;
+/** How much of its tile the decorative boulder fills, keeping its proportions. */
+export const ROCK_SCALE = 0.8;
 
 /** Rendered width of weapon pickups / held weapons, in world pixels. */
 export const WEAPON_PICKUP_WIDTH_PX = 40;

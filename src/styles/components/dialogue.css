@@ -11,20 +11,18 @@
 }
 
 /*
- * A carved wooden sign, built entirely from gradients so it needs no art.
+ * A heavy timber sign, built entirely from gradients so it needs no art.
  *
- * `repeating-linear-gradient` lays down the plank grain, the overlaid
- * top-to-bottom gradient darkens the ends so the boards look recessed, and the
- * outer border reads as the lighter frame around them.
+ * The tones are sampled from the terrain tiles rather than picked by eye: the
+ * plank face sits at the dirt's mean, the grain at its shadows and the raised
+ * frame at its highlights, so the panel reads as cut from the same world.
+ *
+ * Firmness comes from banding the timber in iron: a dark keyline outside the
+ * frame and another inside it, sandwiching the lit edge. `repeating-linear-
+ * gradient` lays the grain, the overlaid top-to-bottom gradient darkens the
+ * ends so the boards look recessed, and the inset shadows pull the centre back.
  */
 .dialogue-box__panel {
-  --wood-light: #a9784a;
-  --wood-mid: #7c5230;
-  --wood-dark: #593820;
-  --wood-edge: #3a2214;
-  --brass: #e0b455;
-  --brass-dark: #8a6420;
-
   position: relative;
   display: flex;
   width: 92%;
@@ -33,26 +31,32 @@
   gap: 16px;
   padding: 20px 24px;
   border: 6px solid var(--wood-light);
-  border-radius: 10px;
+  /* Tighter corners than the old panel: less pillow, more plank. */
+  border-radius: 7px;
   background-color: var(--wood-mid);
   background-image:
     linear-gradient(
       to bottom,
-      rgba(0, 0, 0, 0.3) 0%,
-      rgba(0, 0, 0, 0) 16%,
-      rgba(0, 0, 0, 0) 84%,
-      rgba(0, 0, 0, 0.3) 100%
+      rgba(0, 0, 0, 0.46) 0%,
+      rgba(0, 0, 0, 0) 14%,
+      rgba(0, 0, 0, 0) 86%,
+      rgba(0, 0, 0, 0.5) 100%
     ),
     repeating-linear-gradient(
       to bottom,
-      var(--wood-mid) 0 13px,
-      var(--wood-dark) 13px 14px,
-      var(--wood-mid) 14px 15px
+      var(--wood-mid) 0 11px,
+      var(--wood-dark) 11px 12px,
+      var(--wood-mid) 12px 13px
     );
   box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.09),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.5),
     inset 0 0 0 2px var(--wood-edge),
-    var(--shadow-panel);
-  color: #f6e7cf;
+    inset 0 0 26px rgba(0, 0, 0, 0.55),
+    0 0 0 3px var(--wood-edge),
+    0 14px 30px rgba(0, 0, 0, 0.66),
+    0 4px 0 rgba(0, 0, 0, 0.5);
+  color: var(--wood-text);
   cursor: pointer;
   user-select: none;
 }
@@ -60,35 +64,37 @@
 /*
  * Brass corner brackets.
  *
- * Two pseudo-elements carry all four: each draws an L in two corners using
- * `border-*-color`, so no extra markup is needed.
+ * Eight gradient layers on a single overlay: one horizontal and one vertical
+ * arm per corner, each a flat block placed with `background-position`. Doing
+ * it here rather than with a border on the panel keeps the brass above the
+ * wooden frame, since a border always paints over its own background.
  */
-.dialogue-box__panel::before,
-.dialogue-box__panel::after {
+.dialogue-box__panel::before {
   content: "";
   position: absolute;
-  width: 18px;
-  height: 18px;
-  border: 4px solid transparent;
+  inset: -2px;
+  border-radius: 7px;
   pointer-events: none;
-}
-
-.dialogue-box__panel::before {
-  top: -2px;
-  left: -2px;
-  border-top-color: var(--brass);
-  border-left-color: var(--brass);
-  border-top-left-radius: 8px;
-  box-shadow: inset 1px 1px 0 var(--brass-dark);
-}
-
-.dialogue-box__panel::after {
-  right: -2px;
-  bottom: -2px;
-  border-right-color: var(--brass);
-  border-bottom-color: var(--brass);
-  border-bottom-right-radius: 8px;
-  box-shadow: inset -1px -1px 0 var(--brass-dark);
+  background-image:
+    linear-gradient(var(--brass), var(--brass-dark)),
+    linear-gradient(var(--brass), var(--brass-dark)),
+    linear-gradient(var(--brass), var(--brass-dark)),
+    linear-gradient(var(--brass), var(--brass-dark)),
+    linear-gradient(var(--brass-dark), var(--brass)),
+    linear-gradient(var(--brass-dark), var(--brass)),
+    linear-gradient(var(--brass-dark), var(--brass)),
+    linear-gradient(var(--brass-dark), var(--brass));
+  background-size:
+    28px 6px, 6px 28px,
+    28px 6px, 6px 28px,
+    28px 6px, 6px 28px,
+    28px 6px, 6px 28px;
+  background-position:
+    left top, left top,
+    right top, right top,
+    left bottom, left bottom,
+    right bottom, right bottom;
+  background-repeat: no-repeat;
 }
 
 /* The portrait sits in its own recessed frame, like an inset panel. */
@@ -100,15 +106,17 @@
   align-items: center;
   justify-content: center;
   border: 3px solid var(--wood-edge);
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.28);
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.55);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.42);
+  box-shadow:
+    inset 0 3px 10px rgba(0, 0, 0, 0.7),
+    0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .dialogue-box__portrait img {
   width: 122px;
   height: 122px;
-  border-radius: 5px;
+  border-radius: 4px;
   object-fit: cover;
   image-rendering: pixelated;
 }
@@ -124,7 +132,9 @@
   font-size: 16px;
   font-weight: 700;
   letter-spacing: 0.04em;
-  text-shadow: 1px 1px 0 var(--wood-edge);
+  text-shadow:
+    1px 1px 0 var(--wood-edge),
+    0 0 8px rgba(201, 163, 77, 0.3);
 }
 
 /* Reserved height keeps the panel from resizing as the text types in. */
@@ -133,11 +143,12 @@
   font-family: var(--font-pixel);
   font-size: 20px;
   line-height: 1.3;
-  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.45);
+  text-shadow: 1px 2px 0 rgba(0, 0, 0, 0.62);
 }
 
 .dialogue-box__hint {
   margin-top: 8px;
   font-size: 12px;
-  opacity: 0.75;
+  opacity: 0.7;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.55);
 }

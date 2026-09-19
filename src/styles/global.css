@@ -11,6 +11,20 @@
   --color-hairline: rgba(0, 0, 0, 0.12);
   --color-hairline-light: rgba(255, 255, 255, 0.06);
 
+  /*
+   * Weathered timber and brass, shared by every wooden panel in the UI.
+   * Sampled from the terrain tiles -- the plank face sits at the dirt's mean,
+   * the grain at its shadows, the frame at its highlights -- so panels read as
+   * cut from the same world the ground is.
+   */
+  --wood-light: #6d4c31;
+  --wood-mid: #4a3325;
+  --wood-dark: #31211a;
+  --wood-edge: #1b1109;
+  --wood-text: #f0dcbe;
+  --brass: #c9a34d;
+  --brass-dark: #6f4f18;
+
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;

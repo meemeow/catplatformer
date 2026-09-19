@@ -1,5 +1,6 @@
 import {
   CUTTER_SCALE,
+  PLAYER_SCALE,
   SCALE,
   SNIPER_PICKUP_WIDTH_PX,
   WEAPON_PICKUP_WIDTH_PX,
@@ -112,10 +113,19 @@ export const drawPlayerSprite = (
 
   if (!body) return;
 
-  const screenX = Math.round((Math.round(player.x) - camera.x) * SCALE);
-  const screenY = Math.round((Math.round(player.y) - camera.y) * SCALE);
-  const width = Math.round(player.w * SCALE);
-  const height = Math.round(player.h * SCALE);
+  // The cat is drawn larger than the box it collides with: grown from its feet
+  // and centred on the box, so the extra size is purely cosmetic and never
+  // changes where it can stand or fit.
+  const boxWidth = Math.round(player.w * SCALE);
+  const boxHeight = Math.round(player.h * SCALE);
+  const width = Math.round(boxWidth * PLAYER_SCALE.x);
+  const height = Math.round(boxHeight * PLAYER_SCALE.y);
+
+  const screenX =
+    Math.round((Math.round(player.x) - camera.x) * SCALE) -
+    Math.round((width - boxWidth) / 2);
+  const screenY =
+    Math.round((Math.round(player.y) - camera.y) * SCALE) - (height - boxHeight);
   const facingRight = player.dir > 0;
 
   const held = measureHeldWeapon(player, state, atlas, width, height, facingRight);

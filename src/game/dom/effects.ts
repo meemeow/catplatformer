@@ -3,6 +3,22 @@ import { SCALE, TIMINGS } from "../constants";
 import type { TimerBag } from "../core/timers";
 import type { Camera, Enemy, Player, Rect } from "../types";
 
+/**
+ * Marks a transient element that lives in the sprite layer but is not tracked
+ * by it. Each one is cleaned up by a timer, and a level change cancels every
+ * timer, so the layer sweeps anything still carrying this class.
+ */
+export const EFFECT_CLASS = "game-sprite--effect";
+
+/**
+ * The player's corpse, marked separately.
+ *
+ * It deliberately survives the restart sweep that clears the others, because
+ * it has to stay on screen behind the "restarting level" banner, right up
+ * until the level reloads and the living cat comes back.
+ */
+export const DEATH_CLASS = "game-sprite--death";
+
 /** World point -> pixel offset inside the scaled sprite layer. */
 const toLayerPx = (box: { x: number; y: number }, camera: Camera) => ({
   left: Math.round((box.x - camera.x) * SCALE),
@@ -39,6 +55,7 @@ export const playEnemyDeathEffect = (
   }
 
   el.src = GIFS.catShock;
+  el.classList.add(EFFECT_CLASS);
   el.style.zIndex = "3";
   el.style.display = "block";
   parent.appendChild(el);
@@ -66,7 +83,7 @@ export const playCutterHandover = (
   const el = document.createElement("img");
   el.src = IMAGES.cutter;
   el.draggable = false;
-  el.className = "game-sprite game-sprite--cutter";
+  el.className = `game-sprite game-sprite--cutter ${EFFECT_CLASS}`;
 
   const start = toLayerPx(from, camera);
   const end = toLayerPx(to, camera);
@@ -93,8 +110,11 @@ export interface DeathEffect {
 }
 
 /**
- * The dead-cat sprite popping up and then dropping off the bottom of the
- * screen. Purely visual — the level reset is driven by the death sound.
+ * The dead-cat sprite popping up and flopping back down where it died.
+ *
+ * It settles rather than dropping off the screen, so that the corpse is what
+ * stays visible while the level restarts. Purely visual — the level reset is
+ * driven by the death sound.
  */
 export const playPlayerDeathEffect = (
   parent: HTMLElement | null,
@@ -108,7 +128,7 @@ export const playPlayerDeathEffect = (
   const el = document.createElement("img");
   el.src = IMAGES.catDead;
   el.draggable = false;
-  el.className = "game-sprite game-sprite--death";
+  el.className = `game-sprite ${DEATH_CLASS}`;
 
   const { left, top } = toLayerPx(player, camera);
   el.style.left = `${left}px`;
@@ -124,12 +144,14 @@ export const playPlayerDeathEffect = (
     el.style.top = `${top - riseBy}px`;
   }, 20);
 
+  // Falls back to where it died instead of off the bottom, and stays there
+  // until the level reloads and sweeps it.
   timers.setTimeout(() => {
-    el.style.transition = `top ${fallMs}ms linear`;
-    el.style.top = `${parent.clientHeight + 300}px`;
+    el.style.transition = `top ${fallMs}ms ease-in`;
+    el.style.top = `${top}px`;
   }, riseMs + 40);
 
-  // Safety net: if the respawn never runs, do not leave the sprite behind.
+  // Safety net: if the level never reloads, do not leave the sprite behind.
   timers.setTimeout(() => el.remove(), riseMs + fallMs + 10000);
 
   return { remove: () => el.remove() };

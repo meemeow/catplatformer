@@ -97,7 +97,7 @@
   border-width: var(--art-top) var(--art-right) var(--art-bottom)
     var(--art-left);
   /* Repeated rather than stretched, so the foliage keeps its proportions. */
-  border-image: url("/images/Cattachasm_border.png") 45 46 54 55 round;
+  border-image: url("/images/cattachasm_border.png") 45 46 54 55 round;
   pointer-events: none;
 }
 
