@@ -704,29 +704,9 @@ export class GameSession {
       hasBossSprite: this.sprites?.hasBoss ?? false,
       hasRewardSprite: Boolean(this.sprites?.reward),
       fullHeightLava: this.flags.levelIndex === LEVEL_COUNT - 1,
-      hud: this.hudState(),
     });
 
     this.renderPlayer();
-  }
-
-  /** Null hides the HUD; the boss level keeps it hidden until its dialogue ends. */
-  private hudState() {
-    const { flags } = this;
-    const hidden =
-      !flags.showHud ||
-      flags.introActive ||
-      (flags.levelIndex === BOSS_LEVEL_INDEX && !flags.bossCutsceneDone);
-    if (hidden) return null;
-
-    return {
-      levelIndex: flags.levelIndex,
-      health: flags.health,
-      stars: flags.collectedStars,
-      hasWeapon: flags.hasWeapon,
-      weaponType: flags.weaponType,
-      bossHealth: this.world.boss ? flags.bossHealth : null,
-    };
   }
 
   private renderPlayer(): void {

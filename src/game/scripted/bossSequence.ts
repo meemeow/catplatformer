@@ -93,6 +93,7 @@ export class BossSequence {
     if (flags.levelIndex !== BOSS_LEVEL_INDEX) return;
 
     flags.bossCutsceneDone = true;
+    bridge.setBossEngaged(true);
     flags.bossCanMove = true;
     flags.showSheriffBubble = true;
     flags.freezePlayerAnim = false;

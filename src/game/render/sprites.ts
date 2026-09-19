@@ -164,12 +164,16 @@ export const drawReward = (
   if (hasDomSprite) return;
 
   if (atlas.reward.complete && atlas.reward.naturalWidth) {
+    // Anchored on the collision box's bottom centre, matching the DOM sprite,
+    // so the art that overhangs the box grows upward rather than into the floor.
+    const w = reward.w * REWARD_SCALE.x;
+    const h = reward.h * REWARD_SCALE.y;
     ctx.drawImage(
       atlas.reward,
-      screenX,
-      screenY,
-      reward.w * REWARD_SCALE,
-      reward.h * REWARD_SCALE,
+      screenX - (w - reward.w) / 2,
+      screenY - (h - reward.h),
+      w,
+      h,
     );
     return;
   }

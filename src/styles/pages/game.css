@@ -1,19 +1,87 @@
 /* The game screen: a centred, framed canvas on the cave background. */
-.game-page {
-  box-sizing: border-box;
-  padding: 16px;
+/*
+ * Height of the strip the back button floats in, top-left.
+ *
+ * The button keeps its fixed corner position, so the play area is held out of
+ * that strip instead — with the stage scaled to fill the window there is no
+ * free corner left for it to sit in. The value is its offset, plus its art
+ * height (width x 296/626), plus a gap, and steps down with the button at the
+ * breakpoints in `overlays.css`.
+ *
+ * Declared here rather than in TypeScript because `useStageScale` reads it
+ * back off the document: one definition, so the two can never drift.
+ */
+:root {
+  --toolbar-strip: 110px;
 }
 
+@media (max-width: 760px) {
+  :root {
+    --toolbar-strip: 90px;
+  }
+}
+
+@media (max-width: 460px) {
+  :root {
+    --toolbar-strip: 68px;
+  }
+}
+
+.game-page {
+  box-sizing: border-box;
+  /* The stage scales to fit, so nothing here should ever need to scroll. */
+  overflow: hidden;
+  padding: var(--toolbar-strip) 16px 16px;
+}
+
+/* The stage and the volume control, centred together as one group. */
 .game-page__layout {
   display: flex;
   width: 100%;
   align-items: center;
   justify-content: center;
+  gap: 12px;
 }
 
+/*
+ * Mobile: stack the volume under the stage instead of beside it.
+ *
+ * Width is the scarce axis on a phone, so the control gives up height rather
+ * than taking width away from the play area. Must stay in step with the
+ * matching breakpoints in `volume.css` and `STACK_QUERY` in `useStageScale`.
+ */
+@media (max-width: 760px) {
+  .game-page__layout {
+    flex-direction: column;
+  }
+}
+
+/*
+ * Sized to the scaled stage.
+ *
+ * The play area cannot reflow — the canvas and the DOM sprites over it share
+ * one pixel grid — so the whole stage is scaled instead. A transform does not
+ * change what an element reserves in layout, so this box carries the scaled
+ * size; without it the page would still overflow at the stage's natural size.
+ */
 .game-page__frame-wrap {
-  display: flex;
-  justify-content: center;
+  position: relative;
+  flex: 0 0 auto;
+}
+
+/*
+ * Pinned to the box's top-left corner and scaled from that same corner, so the
+ * scaled stage lands exactly on the reserved box.
+ *
+ * It must not be centred or laid out by flow: at natural size it is far wider
+ * than the box holding it, so any centring would place its origin at a
+ * negative offset and the transform would then scale it off the screen.
+ */
+.game-page__stage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
 }
 
 /*

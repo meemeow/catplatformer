@@ -5,6 +5,7 @@ import { AudioManager, musicForLevel } from "../game/audio/AudioManager";
 import {
   BOSS_LEVEL_INDEX,
   BOSS_STATS,
+  START_LEVEL_INDEX,
   TILE,
   TIMINGS,
   VIEW_HEIGHT,
@@ -39,6 +40,10 @@ export interface GameElementRefs {
 export interface GameEngineState {
   levelIndex: number;
   canvasSize: { w: number; h: number };
+  health: number;
+  stars: number;
+  /** The boss's remaining health, or null while no boss bar should show. */
+  bossHealth: number | null;
   ammo: Ammo;
   hasWeapon: boolean;
   weaponType: WeaponType | null;
@@ -68,7 +73,7 @@ const AIM_HINT_SHOTS = 2;
  * appeared.
  */
 export const useGameEngine = (refs: GameElementRefs): GameEngineState => {
-  const [levelIndex, setLevelIndex] = useState(0);
+  const [levelIndex, setLevelIndex] = useState(START_LEVEL_INDEX);
   const [canvasSize, setCanvasSize] = useState({ w: VIEW_WIDTH, h: VIEW_HEIGHT });
   const [paused, setPaused] = useState(false);
   const [health, setHealth] = useState(INITIAL_HEALTH);
@@ -78,9 +83,13 @@ export const useGameEngine = (refs: GameElementRefs): GameEngineState => {
   const [weaponType, setWeaponType] = useState<WeaponType | null>(null);
   const [ammo, setAmmo] = useState<Ammo>(() => initialAmmo(null));
   const [completionMessage, setCompletionMessage] = useState<string | null>(null);
-  const [introActive, setIntroActive] = useState(true);
+  // The arrival cutscene walks the cat into level one, so it only plays when
+  // that is where the game starts.
+  const [introActive, setIntroActive] = useState(START_LEVEL_INDEX === 0);
   const [cutsceneActive, setCutsceneActive] = useState(false);
   const [showHud, setShowHud] = useState(false);
+  /** The boss bar waits for the opening cutscene, like the rest of the HUD. */
+  const [bossEngaged, setBossEngaged] = useState(false);
   const [blackOverlay, setBlackOverlay] = useState(true);
   const [blackOverlayOpacity, setBlackOverlayOpacity] = useState(1);
   const [showEndScreen, setShowEndScreen] = useState(false);
@@ -216,6 +225,11 @@ export const useGameEngine = (refs: GameElementRefs): GameEngineState => {
     );
   }, []);
 
+  // Every level starts with the boss bar down; the cutscene raises it again.
+  useEffect(() => {
+    setBossEngaged(false);
+  }, [levelIndex]);
+
   /** Browsers block playback until the page has seen a gesture. */
   useEffect(() => {
     if (audio.isUnlocked) return;
@@ -329,7 +343,16 @@ export const useGameEngine = (refs: GameElementRefs): GameEngineState => {
 
         window.clearInterval(fade);
         setBlackOverlay(false);
-        IntroSequence.begin(flagsRef.current);
+
+        // Normally the cutscene shows the HUD and unpauses once the cat has
+        // walked in. Starting on a later level skips all that, so the same
+        // handover has to happen here instead.
+        if (flagsRef.current.introActive) {
+          IntroSequence.begin(flagsRef.current);
+        } else {
+          setShowHud(true);
+          setPaused(false);
+        }
       }, TIMINGS.fadeTickMs);
     }, TIMINGS.fadeTickMs);
 
@@ -353,6 +376,7 @@ export const useGameEngine = (refs: GameElementRefs): GameEngineState => {
       setHealth,
       setCutsceneActive,
       setShowHud,
+      setBossEngaged,
       setIntroActive,
       setBlackOverlay,
       setBlackOverlayOpacity,
@@ -403,6 +427,9 @@ export const useGameEngine = (refs: GameElementRefs): GameEngineState => {
   return {
     levelIndex,
     canvasSize,
+    health,
+    stars: collectedStars,
+    bossHealth: bossEngaged ? bossHealth : null,
     ammo,
     hasWeapon,
     weaponType,

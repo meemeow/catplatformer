@@ -27,6 +27,8 @@ export interface EngineBridge {
   setWeaponType: (weapon: WeaponType | null) => void;
   setAmmo: (update: Ammo | ((ammo: Ammo) => Ammo)) => void;
   setBossHealth: (health: number) => void;
+  /** True once the boss cutscene ends and its health bar should be shown. */
+  setBossEngaged: (engaged: boolean) => void;
   setHealth: (health: number) => void;
   setCutsceneActive: (active: boolean) => void;
   setShowHud: (show: boolean) => void;

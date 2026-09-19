@@ -121,10 +121,10 @@ export class SpriteLayer {
       this.rewardEl,
       reward,
       camera,
-      reward.w * REWARD_SCALE,
-      reward.h * REWARD_SCALE,
-      // The hostage art is wider than its collision box.
-      60,
+      reward.w * REWARD_SCALE.x,
+      reward.h * REWARD_SCALE.y,
+      reward.w,
+      reward.h,
     );
   }
 
@@ -161,6 +161,10 @@ export class SpriteLayer {
 /**
  * Positions one sprite from world coordinates, and hides it once it is more
  * than its own size outside the view.
+ *
+ * A sprite drawn larger than the box it collides with is anchored on that
+ * box's bottom centre, so the extra size grows upward and outward. Anchoring
+ * the top-left instead would push the overhang straight down through the floor.
  */
 const placeSprite = (
   img: HTMLImageElement,
@@ -168,16 +172,22 @@ const placeSprite = (
   camera: Camera,
   worldWidth: number,
   worldHeight: number,
-  overrideWidthPx?: number,
+  /** Collision box, when it differs from the drawn size. */
+  boxWidth = worldWidth,
+  boxHeight = worldHeight,
 ): void => {
-  const screenX = Math.round((box.x - camera.x) * SCALE);
-  const screenY = Math.round((box.y - camera.y) * SCALE);
   const width = Math.round(worldWidth * SCALE);
   const height = Math.round(worldHeight * SCALE);
+  const boxW = Math.round(boxWidth * SCALE);
+  const boxH = Math.round(boxHeight * SCALE);
+
+  const screenX =
+    Math.round((box.x - camera.x) * SCALE) - Math.round((width - boxW) / 2);
+  const screenY = Math.round((box.y - camera.y) * SCALE) - (height - boxH);
 
   img.style.left = `${screenX}px`;
   img.style.top = `${screenY}px`;
-  img.style.width = `${overrideWidthPx ?? width}px`;
+  img.style.width = `${width}px`;
   img.style.height = `${height}px`;
 
   const visible =

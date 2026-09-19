@@ -10,7 +10,6 @@ import {
   drawWeaponPickup,
 } from "./sprites";
 import { BackgroundRenderer } from "./background";
-import { drawHud, type HudState } from "./hud";
 import { drawTracers } from "./tracers";
 import { TileRenderer, tileDrawContext } from "./tiles";
 
@@ -36,8 +35,6 @@ export interface SceneFrame {
   hasRewardSprite: boolean;
   /** The final level floods its pit, so lava is drawn full-height. */
   fullHeightLava: boolean;
-  /** Null hides the HUD entirely. */
-  hud: HudState | null;
 }
 
 /** Draws only the tiles the camera can see. */
@@ -119,5 +116,4 @@ export const renderScene = (
     drawStar(ctx, star, screen.x, screen.y, frame.now, atlas);
   }
 
-  if (frame.hud) drawHud(ctx, canvasWidth, frame.hud);
 };

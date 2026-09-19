@@ -14,7 +14,15 @@ export const VIEW_HEIGHT = 10 * TILE;
 export const SCALE = 1.2;
 
 /** Visual-only multipliers. */
-export const REWARD_SCALE = 1.0;
+/**
+ * Drawn size of the hostage, as a multiple of its collision box.
+ *
+ * The height matches the player's drawn height so the two cats read as the
+ * same size standing together. The width is larger because the art is broader
+ * than the player's — outstretched arms and tears — and squashing it to the
+ * player's width would distort it.
+ */
+export const REWARD_SCALE = { x: 1.48, y: 1.35 } as const;
 export const ENEMY_SCALE = 1.5;
 /**
  * How much larger the cat is drawn than the box it collides with, per axis.
@@ -46,6 +54,13 @@ export const MAX_STARS_PER_LEVEL = 4;
 
 /** Index of the boss level inside `LEVELS`. */
 export const BOSS_LEVEL_INDEX = 4;
+/**
+ * Level the game opens on, 0-based, so level 5 is 4.
+ *
+ * Anything other than 0 skips the arrival cutscene, which only makes sense on
+ * the way into level one. Set this back to 0 for a normal playthrough.
+ */
+export const START_LEVEL_INDEX: number = 0;
 /** Index of the level that shows the first-star hint bubble. */
 export const FIRST_STAR_LEVEL_INDEX = 0;
 

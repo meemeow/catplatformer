@@ -10,6 +10,28 @@
   image-rendering: pixelated;
 }
 
+/*
+ * The button shrinks on small screens so it stays a corner control instead of
+ * claiming a quarter of the view.
+ *
+ * Its height is width x 296/626, and the strip the page holds clear for it is
+ * that height plus its offset and a gap — so `--toolbar-strip` in `game.css`
+ * steps down at these same widths.
+ */
+@media (max-width: 760px) {
+  .back-button {
+    width: 140px;
+  }
+}
+
+@media (max-width: 460px) {
+  .back-button {
+    top: 8px;
+    left: 8px;
+    width: 104px;
+  }
+}
+
 /* Covers the viewport during fades; opacity is driven from React. */
 .fade-overlay {
   position: fixed;

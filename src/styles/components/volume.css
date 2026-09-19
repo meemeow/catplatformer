@@ -1,17 +1,23 @@
 /*
- * Vertical master-volume control, fixed to the right edge of the game screen.
+ * Master-volume control, a timber post standing beside the play area.
  *
- * Built as a timber post with brass fittings from the shared wood tokens, so
- * it reads as part of the world rather than as browser chrome sitting beside
- * it. The readout sits on top and the speaker below, so louder is literally
- * higher.
+ * Built with brass fittings from the shared wood tokens, so it reads as part
+ * of the world rather than as browser chrome parked next to it. The readout
+ * sits on top and the speaker below, so louder is literally higher.
+ *
+ * On a narrow screen there is no room for a column beside the stage, so the
+ * block at the bottom of this file lays the post down into a beam underneath
+ * it instead.
+ *
+ * Either way it flows inside the centred layout rather than being fixed to the
+ * window: pinned to the viewport edge it drifts away from the frame on a wide
+ * screen and lands on top of it on a narrow one.
  */
 .volume {
-  position: fixed;
-  top: 50%;
-  right: 16px;
+  position: relative;
   z-index: var(--z-chrome);
   display: flex;
+  flex: 0 0 auto;
   flex-direction: column;
   align-items: center;
   gap: 10px;
@@ -42,11 +48,10 @@
     inset 0 0 18px rgba(0, 0, 0, 0.5),
     0 0 0 3px var(--wood-edge),
     0 10px 24px rgba(0, 0, 0, 0.6);
-  transform: translateY(-50%);
   user-select: none;
 }
 
-/* Brass caps, the fittings that band the top and bottom of the post. */
+/* Brass caps, the fittings that band each end of the post. */
 .volume::before,
 .volume::after {
   content: "";
@@ -96,7 +101,8 @@
  */
 .volume__slider {
   width: 22px;
-  height: 160px;
+  /* Tracks the window height so the post always fits. */
+  height: clamp(70px, 26vh, 160px);
   margin: 0;
   border-radius: 999px;
   background: linear-gradient(
@@ -162,9 +168,71 @@
   outline-offset: 2px;
 }
 
-/* On short screens the control would overlap the frame, so shrink it. */
-@media (max-height: 620px) {
+/*
+ * Mobile: lay the post down into a beam under the stage.
+ *
+ * A column beside the play area costs width, which is the scarce axis on a
+ * phone — taking it from the height instead leaves the stage far bigger. The
+ * slider drops back to its native left-to-right orientation, the brass caps
+ * move to the ends, and the level now reads left to right.
+ *
+ * `useStageScale` reserves space on the matching axis, so this breakpoint has
+ * to stay in step with `STACK_QUERY` there.
+ */
+@media (max-width: 760px) {
+  .volume {
+    flex-direction: row;
+    padding: 10px 14px;
+  }
+
+  .volume::before,
+  .volume::after {
+    right: auto;
+    left: auto;
+    top: -2px;
+    bottom: -2px;
+    width: 5px;
+    height: auto;
+  }
+
+  .volume::before {
+    left: -2px;
+    background: linear-gradient(to right, var(--brass), var(--brass-dark));
+  }
+
+  .volume::after {
+    right: -2px;
+    background: linear-gradient(to right, var(--brass-dark), var(--brass));
+  }
+
   .volume__slider {
-    height: 96px;
+    width: clamp(120px, 42vw, 320px);
+    height: 22px;
+    background: linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.55),
+      rgba(0, 0, 0, 0.24) 45%,
+      rgba(0, 0, 0, 0.55)
+    );
+    writing-mode: horizontal-tb;
+    direction: ltr;
+  }
+}
+
+/* Tighter still on a small phone: padding goes before the controls do. */
+@media (max-width: 460px) {
+  .volume {
+    gap: 7px;
+    padding: 6px 9px;
+  }
+
+  .volume__readout {
+    font-size: 10px;
+  }
+
+  .volume__mute {
+    width: 22px;
+    height: 20px;
+    font-size: 12px;
   }
 }

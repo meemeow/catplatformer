@@ -1,11 +1,73 @@
 import type { Camera } from "../types";
-import { SKY } from "./palette";
+import { EARTH, SKY } from "./palette";
 import { isReady, TEXTURES } from "./textures";
 
 const CLOUD_COUNT = 7;
 
 /** The haze colour that stands in for distance, matching the sky's horizon. */
 const HAZE = "195,226,244";
+
+/**
+ * The fraction of a range's height over which its foot dissolves.
+ *
+ * Shared with the ground, which has to be opaque by the time this fade starts:
+ * between the two lies the only place the sky could show through both, which
+ * is what left a blue band above the earth.
+ */
+const FOOT_FADE = 0.28;
+
+/**
+ * Where the ground starts if the art has not loaded yet, as a fraction of the
+ * canvas above the deepest range's foot.
+ *
+ * Only a fallback: without the sprite there is no drawn height to take the
+ * fade from.
+ */
+const GROUND_OVERLAP = 0.06;
+
+/**
+ * The band at the top of the ground where it fades in, in pixels.
+ *
+ * Everything below it is opaque. It is only deep enough to let the dissolved
+ * feet of the ranges settle into the earth instead of being cut off by a line
+ * drawn across them.
+ */
+const GROUND_BLEND = 30;
+
+/**
+ * How much of the dark covers the ground's soil.
+ *
+ * The backdrop is the same earth the platforms are cut from, so without this
+ * it would read as another surface to stand on. Dimming it settles it behind
+ * them while leaving enough grain to see it is soil and not a painted panel.
+ */
+const GROUND_DIM = 0.65;
+
+/**
+ * How opaque the ground is over the sky behind it.
+ *
+ * Short of solid, so a little of the sky comes through and the earth sits in
+ * the same aerial perspective as the ranges instead of being the one thing on
+ * screen with no distance to it.
+ */
+const GROUND_OPACITY = 0.9;
+
+/**
+ * The side of one tile of background soil, in pixels.
+ *
+ * Smaller than a terrain tile so the backdrop reads as further off, and so its
+ * grain does not line up with the platforms drawn over it.
+ */
+const GROUND_TILE = 28;
+
+/** One tile of background soil, scaled down and ready to repeat. */
+const groundTile = (soil: HTMLImageElement): HTMLCanvasElement => {
+  const { canvas, ctx } = createLayer(GROUND_TILE, GROUND_TILE);
+  // Pixel art: let it stay hard-edged rather than blur as it shrinks.
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(soil, 0, 0, GROUND_TILE, GROUND_TILE);
+  return canvas;
+};
 
 /**
  * One parallax band of mountains.
@@ -102,7 +164,12 @@ const buildMountainStrip = (
   // filled over the whole strip because `destination-in` erases everything
   // the fill does not cover, and canvas gradients clamp past their stops.
   ctx.globalCompositeOperation = "destination-in";
-  const fade = ctx.createLinearGradient(0, baseY - Math.round(h * 0.28), 0, baseY);
+  const fade = ctx.createLinearGradient(
+    0,
+    baseY - Math.round(h * FOOT_FADE),
+    0,
+    baseY,
+  );
   fade.addColorStop(0, "rgba(0,0,0,1)");
   fade.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = fade;
@@ -123,6 +190,8 @@ export class BackgroundRenderer {
   private width = 0;
   private height = 0;
   private strips: HTMLCanvasElement[] = [];
+  /** The tiled earth behind the level, built once per size. */
+  private ground: HTMLCanvasElement | null = null;
   private layers: MountainLayer[] = [];
   /** Strips built before the art arrived would be blank, so they are rebuilt. */
   private builtFromTextures = false;
@@ -131,10 +200,13 @@ export class BackgroundRenderer {
     this.width = width;
     this.height = height;
     this.layers = mountainLayers();
-    this.builtFromTextures = this.layers.every((layer) => isReady(layer.sprite));
+    this.builtFromTextures =
+      this.layers.every((layer) => isReady(layer.sprite)) &&
+      isReady(TEXTURES.dirt[0]);
     this.strips = this.builtFromTextures
       ? this.layers.map((layer) => buildMountainStrip(width, height, layer))
       : [];
+    this.ground = this.buildGround(width, height);
   }
 
   draw(
@@ -150,6 +222,9 @@ export class BackgroundRenderer {
 
     this.drawSky(ctx, width, height);
     this.drawSun(ctx, width, camera);
+    // Behind the ranges: they stand on the ground rather than being cut off
+    // at the ankle by it.
+    this.drawGround(ctx, width, height);
     this.drawMountains(ctx, width, camera);
     this.drawClouds(ctx, width, camera, now);
   }
@@ -198,6 +273,114 @@ export class BackgroundRenderer {
       ctx.drawImage(strip, x, 0);
       ctx.drawImage(strip, x + width, 0);
     });
+  }
+
+  /**
+   * Where the ground starts to fade in and where it becomes solid.
+   *
+   * The two are the deepest range's own fade: the ground comes up exactly as
+   * the range dissolves and is opaque by the time the range has gone. Neither
+   * can leave a gap for the sky, and retuning a layer's scale or footing moves
+   * the ground with it.
+   */
+  private groundBand(height: number): { top: number; solid: number } {
+    const deepest = this.layers.reduce((low, layer) =>
+      layer.footFrac > low.footFrac ? layer : low,
+    );
+    const baseY = Math.round(height * deepest.footFrac);
+
+    if (!this.builtFromTextures) {
+      const top = Math.round(baseY - height * GROUND_OVERLAP);
+      return { top, solid: Math.min(height, top + GROUND_BLEND) };
+    }
+    const drawn = deepest.sprite.naturalHeight * deepest.scale;
+    return { top: Math.round(baseY - drawn * FOOT_FADE), solid: baseY };
+  }
+
+  /**
+   * The ground below the ranges: solid earth, not a tint over the sky.
+   *
+   * It is the level's own soil, tiled and dimmed so it settles behind the
+   * platforms rather than competing with them, and it is opaque from the
+   * height at which
+   * the lowest range starts to dissolve. That is what closes the band of sky
+   * that used to show between the two: above that line the range still covers
+   * the ground, below it the ground covers the sky.
+   */
+  /**
+   * Builds the earth once, rather than tiling and dimming it every frame.
+   *
+   * The top edge is cut with `destination-in` so the strip itself fades out
+   * there: the fade has to take the soil with it, which a gradient painted
+   * over the top could not do.
+   */
+  private buildGround(
+    width: number,
+    height: number,
+  ): HTMLCanvasElement | null {
+    const soil = TEXTURES.dirt[0];
+    if (!isReady(soil)) return null;
+
+    const { top, solid } = this.groundBand(height);
+    const { canvas, ctx } = createLayer(width, height - top);
+    const blend = solid - top;
+
+    const tiled = ctx.createPattern(groundTile(soil), "repeat");
+    if (!tiled) return null;
+    ctx.fillStyle = tiled;
+    ctx.fillRect(0, 0, width, canvas.height);
+
+    const dim = ctx.createLinearGradient(0, blend, 0, canvas.height);
+    dim.addColorStop(0, EARTH.top);
+    dim.addColorStop(1, EARTH.deep);
+    ctx.globalAlpha = GROUND_DIM;
+    ctx.fillStyle = dim;
+    ctx.fillRect(0, 0, width, canvas.height);
+    ctx.globalAlpha = 1;
+
+    // Filled over the whole strip because `destination-in` erases whatever the
+    // fill does not cover, and canvas gradients clamp past their stops.
+    ctx.globalCompositeOperation = "destination-in";
+    const fade = ctx.createLinearGradient(0, 0, 0, blend);
+    fade.addColorStop(0, "rgba(0,0,0,0)");
+    fade.addColorStop(1, `rgba(0,0,0,${GROUND_OPACITY})`);
+    ctx.fillStyle = fade;
+    ctx.fillRect(0, 0, width, canvas.height);
+    ctx.globalCompositeOperation = "source-over";
+
+    return canvas;
+  }
+
+  private drawGround(
+    ctx: CanvasRenderingContext2D,
+    width: number,
+    height: number,
+  ): void {
+    if (this.ground) {
+      ctx.drawImage(this.ground, 0, height - this.ground.height);
+      return;
+    }
+
+    // Flat colour until the soil arrives, so the world is never open sky.
+    const { top, solid } = this.groundBand(height);
+
+    // The body: earth, darkening with depth the way buried tiles do.
+    const body = ctx.createLinearGradient(0, solid, 0, height);
+    body.addColorStop(0, EARTH.top);
+    body.addColorStop(1, EARTH.deep);
+    ctx.globalAlpha = GROUND_OPACITY;
+    ctx.fillStyle = body;
+    ctx.fillRect(0, solid, width, height - solid);
+    ctx.globalAlpha = 1;
+
+    // Its top edge only, fading in behind rock that is still solid there.
+    const edge = ctx.createLinearGradient(0, top, 0, solid);
+    edge.addColorStop(0, EARTH.clear);
+    edge.addColorStop(1, EARTH.top);
+    ctx.globalAlpha = GROUND_OPACITY;
+    ctx.fillStyle = edge;
+    ctx.fillRect(0, top, width, solid - top);
+    ctx.globalAlpha = 1;
   }
 
   private drawClouds(

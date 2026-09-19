@@ -15,6 +15,27 @@ export const SKY = {
   sunGlow: "rgba(255,214,120,0)",
 } as const;
 
+/**
+ * The ground the world stands on, filling everything below the ranges.
+ *
+ * Solid earth rather than a tint over the sky: the lower half of a level is
+ * meant to read as ground the player is inside, not as distance.
+ *
+ * It is `DIRT` carried toward a warm light, so it belongs to the same soil the
+ * platforms are cut from without competing with them. Lighter than `DIRT.top`
+ * where it meets the ranges and darker than `DIRT.bottom` at the foot of the
+ * view, so a platform is never the same value as the ground behind it, wherever
+ * on screen it happens to sit.
+ */
+export const EARTH = {
+  /** Earth where the ground meets the ranges. */
+  top: "#7b6348",
+  /** Shadowed earth at the foot of the view. */
+  deep: "#413526",
+  /** `top` at zero alpha, so the ranges can settle into the ground. */
+  clear: "rgba(123, 99, 72, 0)",
+} as const;
+
 export const GRASS = {
   highlight: "#7fd04f",
   top: "#5cb038",
@@ -32,6 +53,30 @@ export const DIRT = {
   pebble: "#8f7658",
   root: "rgba(40,24,10,0.45)",
 } as const;
+
+/**
+ * Ground too deep to catch any light.
+ *
+ * Below the lit rows the soil loses its texture entirely and is drawn flat:
+ * that is what reads as depth, and it stops a tall bank looking like one tile
+ * stamped over and over. The light falls off continuously instead of in
+ * steps: the lit soil fades into `fill` at its foot, the row under it falls
+ * from `fill` to `abyss`, and everything below that is `abyss`.
+ */
+/** Kept apart so the solid colour and the faded one cannot drift. */
+const ABYSS_RGB = "11, 7, 6";
+
+export const DEPTH = {
+  fill: "#23171f",
+  /** Near-black, with just enough warmth left in it to read as earth. */
+  abyss: `rgb(${ABYSS_RGB})`,
+  /** `fill` at zero alpha, so the lit soil above can fade down into it. */
+  clear: "rgba(35,23,31,0)",
+} as const;
+
+/** `DEPTH.abyss` at a given strength, for fading the dark out over something. */
+export const abyssAt = (alpha: number): string =>
+  `rgba(${ABYSS_RGB}, ${alpha})`;
 
 export const STONE = {
   brick: "#6c7a64",

@@ -1,21 +1,37 @@
-/* Ammo counter, pinned inside the framed play area. */
+/*
+ * Ammo counter, pinned to the far corner of the play area.
+ *
+ * Opposite the stats board rather than beside it: the two used to share a
+ * corner, and the board is the wider of the pair. Cut from the same timber as
+ * everything else, in miniature.
+ */
 .ammo-badge {
   position: absolute;
   top: 12px;
-  left: 12px;
+  right: 12px;
   z-index: var(--z-hud);
-  padding: 7px 10px;
-  border: 2px solid #3a2214;
-  border-radius: var(--radius-sm);
-  background: linear-gradient(to bottom, #7c5230, #593820);
+  padding: 7px 11px;
+  border: 3px solid var(--wood-light);
+  border-radius: 6px;
+  background-color: var(--wood-mid);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--wood-mid) 0 11px,
+    var(--wood-dark) 11px 12px,
+    var(--wood-mid) 12px 13px
+  );
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.3),
-    0 3px 8px rgba(0, 0, 0, 0.5);
-  color: #f6e7cf;
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 0 0 2px var(--wood-edge),
+    inset 0 0 12px rgba(0, 0, 0, 0.5),
+    0 0 0 2px var(--wood-edge),
+    0 6px 16px rgba(0, 0, 0, 0.55);
+  color: var(--wood-text);
   font-family: var(--font-pixel);
   font-size: 12px;
-  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.5);
+  line-height: 1.25;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.55);
+  font-variant-numeric: tabular-nums;
   user-select: none;
 }
 
@@ -45,7 +61,8 @@
 
 /* Sits above the mountains but below the clouds. */
 .hint-banner--aim {
-  top: 88px;
+  /* Below the boss bar, which is on screen whenever this hint is. */
+  top: 92px;
   padding: 8px 12px;
   border-radius: 10px;
   font-size: 14px;
@@ -57,4 +74,293 @@
 
 .hint-banner--prompt {
   top: 160px;
+}
+
+/*
+ * The stats board and the boss bar.
+ *
+ * Both are cut from the same timber as the dialogue panel and the volume post:
+ * the plank face at `--wood-mid`, the grain at `--wood-dark`, a raised
+ * `--wood-light` frame, and the iron banding — a dark keyline inside and out,
+ * sandwiching the lit edge — that makes the wood read as solid rather than as
+ * a brown box. Brass is kept for the parts that carry a reading.
+ */
+.stats-panel {
+  position: absolute;
+  /* Clear of the frame, at the same height as the boss bar. */
+  top: 26px;
+  left: 12px;
+  z-index: var(--z-hud);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 5px solid var(--wood-light);
+  border-radius: 7px;
+  background-color: var(--wood-mid);
+  background-image:
+    linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.42) 0%,
+      rgba(0, 0, 0, 0) 16%,
+      rgba(0, 0, 0, 0) 84%,
+      rgba(0, 0, 0, 0.46) 100%
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      var(--wood-mid) 0 11px,
+      var(--wood-dark) 11px 12px,
+      var(--wood-mid) 12px 13px
+    );
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.46),
+    inset 0 0 0 2px var(--wood-edge),
+    inset 0 0 18px rgba(0, 0, 0, 0.5),
+    0 0 0 3px var(--wood-edge),
+    0 10px 24px rgba(0, 0, 0, 0.6);
+  color: var(--wood-text);
+  font-family: var(--font-pixel);
+  /*
+   * Restored explicitly: the play area sets `line-height: 0` to kill the inline
+   * gap under the canvas, and that inherits down here. Left at zero every line
+   * box collapses and the rows of the board stack on top of each other.
+   */
+  line-height: 1.25;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Brass caps banding the top and bottom of the board. */
+.stats-panel::before,
+.stats-panel::after {
+  content: "";
+  position: absolute;
+  right: -2px;
+  left: -2px;
+  height: 5px;
+  background: linear-gradient(var(--brass), var(--brass-dark));
+  pointer-events: none;
+}
+
+.stats-panel::before {
+  top: -2px;
+}
+
+.stats-panel::after {
+  bottom: -2px;
+  background: linear-gradient(var(--brass-dark), var(--brass));
+}
+
+/*
+ * Two columns of label and figure.
+ *
+ * A grid rather than a row per stat, so the figures line up under each other
+ * whatever the labels say. The canvas version placed every string at a fixed
+ * offset, which is why a longer weapon name used to run into the column beside
+ * it.
+ */
+.stats-panel__grid {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  align-items: center;
+  gap: 4px 18px;
+}
+
+.stats-panel__stat {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.stats-panel__label {
+  color: var(--brass);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-shadow: 1px 1px 0 var(--wood-edge);
+}
+
+.stats-panel__value {
+  font-size: 13px;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.6);
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * The controls reminder, a column of the same grid.
+ *
+ * Set apart by a scored line down the timber rather than across it, since it
+ * now stands beside the figures instead of under them.
+ */
+.stats-panel__keys {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding-left: 14px;
+  border-left: 1px solid var(--wood-edge);
+  box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.06);
+  font-size: 10px;
+  opacity: 0.85;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.55);
+}
+
+/* Keycaps: the same pressed stud as the volume control's mute button. */
+.stats-panel__keys b {
+  display: inline-block;
+  min-width: 13px;
+  padding: 1px 3px;
+  border: 1px solid var(--wood-edge);
+  border-radius: 3px;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.11),
+    rgba(0, 0, 0, 0.28)
+  );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  color: var(--brass);
+  text-align: center;
+}
+
+/* The boss bar: the volume post laid on its side, centred over the play area. */
+.boss-bar {
+  position: absolute;
+  /* Tucked just under the frame, whose foliage overhangs the play area. */
+  top: 26px;
+  left: 50%;
+  z-index: var(--z-hud);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border: 5px solid var(--wood-light);
+  border-radius: 7px;
+  background-color: var(--wood-mid);
+  background-image:
+    linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.42) 0%,
+      rgba(0, 0, 0, 0) 18%,
+      rgba(0, 0, 0, 0) 82%,
+      rgba(0, 0, 0, 0.46) 100%
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      var(--wood-mid) 0 11px,
+      var(--wood-dark) 11px 12px,
+      var(--wood-mid) 12px 13px
+    );
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.46),
+    inset 0 0 0 2px var(--wood-edge),
+    inset 0 0 18px rgba(0, 0, 0, 0.5),
+    0 0 0 3px var(--wood-edge),
+    0 10px 24px rgba(0, 0, 0, 0.6);
+  color: var(--wood-text);
+  font-family: var(--font-pixel);
+  /* As on the stats board: the play area zeroes it. */
+  line-height: 1.25;
+  transform: translateX(-50%);
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Brass caps on the ends, as on the volume post when it lies down. */
+.boss-bar::before,
+.boss-bar::after {
+  content: "";
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 5px;
+  pointer-events: none;
+}
+
+.boss-bar::before {
+  left: -2px;
+  background: linear-gradient(to right, var(--brass), var(--brass-dark));
+}
+
+.boss-bar::after {
+  right: -2px;
+  background: linear-gradient(to right, var(--brass-dark), var(--brass));
+}
+
+.boss-bar__name {
+  color: var(--brass);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-shadow: 1px 1px 0 var(--wood-edge);
+}
+
+/*
+ * A channel routed into the timber, the same treatment the volume slider's
+ * track gets: a dark recess with the shadow falling from its top edge.
+ */
+.boss-bar__track {
+  position: relative;
+  overflow: hidden;
+  width: clamp(120px, 26vw, 280px);
+  height: 14px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.62),
+    rgba(0, 0, 0, 0.3) 55%,
+    rgba(0, 0, 0, 0.55)
+  );
+  box-shadow:
+    inset 0 0 0 1px var(--wood-edge),
+    inset 0 2px 6px rgba(0, 0, 0, 0.65);
+}
+
+/*
+ * The remaining health, sitting in the channel.
+ *
+ * Kept red rather than brass: it is the one reading the player must not
+ * confuse with the furniture around it. The transition means a hit reads as
+ * the bar draining rather than as a number jumping.
+ */
+.boss-bar__fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(to bottom, #e8613f, #a81f1f 60%, #6d1212);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 0 10px rgba(216, 60, 40, 0.45);
+  transition: width 140ms linear;
+}
+
+.boss-bar__readout {
+  min-width: 4ch;
+  color: var(--brass);
+  font-size: 11px;
+  text-align: right;
+  text-shadow: 1px 1px 0 var(--wood-edge);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Small screens: the board takes space the play area needs more. */
+@media (max-width: 460px) {
+  .stats-panel {
+    gap: 5px;
+    padding: 8px 10px;
+  }
+
+  .stats-panel__grid {
+    gap: 3px 12px;
+  }
+
+  .stats-panel__grid {
+    grid-template-columns: repeat(2, auto);
+  }
+
+  .stats-panel__keys {
+    display: none;
+  }
+
+  .boss-bar {
+    gap: 7px;
+    padding: 6px 10px;
+  }
 }
